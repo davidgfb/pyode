@@ -1,4 +1,6 @@
-import sys, os, random, time
+from time import time, sleep
+from random import uniform
+
 from math import *
 from OpenGL.GL import *
 from OpenGL.GLU import *
@@ -605,7 +607,7 @@ def onKey(c, x, y):
 
     # quit
     elif c == 'q' or c == 'Q':
-        sys.exit(0)
+        exit(0)
 
 def onDraw():
     """GLUT render callback."""
@@ -624,10 +626,7 @@ def onIdle():
     global Paused, lasttime, numiter
 
     if not Paused:
-        t = dt - (time.time() - lasttime)
-
-        if t > 0:
-            time.sleep(t)
+        #t = dt - time() - lasttime
 
         glutPostRedisplay()
 
@@ -636,7 +635,7 @@ def onIdle():
             space.collide((world, contactgroup), near_callback)
 
             # Simulation step (with slo motion)
-            world.step(dt / stepsPerFrame / SloMo)
+            world.step(1/1000) #dt / stepsPerFrame / SloMo)
 
             numiter += 1
 
@@ -646,11 +645,11 @@ def onIdle():
             # Remove all contact joints
             contactgroup.empty()
 
-        lasttime = time.time()
+        lasttime = time()
 
 # initialize GLUT
 glutInit()
-glutInitDisplayMode(18)
+glutInitDisplayMode(GLUT_RGB | GLUT_DEPTH) #18 o GLUT_DOUBLE = vsync
 
 # create the program window
 x, y, width, height = 0, 0, 1280, 720
@@ -679,12 +678,12 @@ between two bodies collide'''
 contactgroup = ode.JointGroup()
 
 # set the initial simulation loop parameters
-fps = 60
+fps = 60 #?
 dt = 1 / fps
 stepsPerFrame = 2
 SloMo = 1
 Paused = False
-lasttime = time.time()
+lasttime = time()
 numiter = 0
 
 # create the ragdoll
@@ -694,7 +693,7 @@ print("total mass is %.1f kg (%.1f lbs)" % (ragdoll.totalMass,\
 
 # create an obstacle
 obstacle, obsgeom = createCapsule(world, space, 1000, 0.05, 0.15)
-pos = (random.uniform(-0.3, 0.3), 0.2, random.uniform(-0.15, 0.2))
+pos = (uniform(-0.3, 0.3), 0.2, uniform(-0.15, 0.2))
 #pos = (0.27396178783269359, 0.20000000000000001, 0.17531818795388002)
 obstacle.setPosition(pos)
 obstacle.setRotation(rightRot)
