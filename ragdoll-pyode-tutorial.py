@@ -326,7 +326,8 @@ class RagDoll():
 
         # define body rotation automatically from body axis
         za = norm3(p2 - p1) #!
-        if (abs(dot3(za, (1.0, 0.0, 0.0))) < 0.7):
+
+        if abs(dot3(za, (1, 0, 0))) < 0.7:
             xa = (1, 0, 0)
 
         else:
@@ -335,9 +336,10 @@ class RagDoll():
         ya = cross(za, xa)
         xa = norm3(cross(ya, za))
         ya = cross(za, xa)
-        rot = (xa[0], ya[0], za[0], xa[1], ya[1], za[1], xa[2], ya[2], za[2])
+        rot = (xa[0], ya[0], za[0], xa[1], ya[1], za[1],\
+               xa[2], ya[2], za[2])
 
-        body.setPosition(mul3(add3(p1, p2), 0.5))
+        body.setPosition((p1 + p2) / 2)
         body.setRotation(rot)
 
         self.bodies.append(body)
@@ -357,10 +359,11 @@ class RagDoll():
 
         return joint
 
-    def addHingeJoint(self, body1, body2, anchor, axis, loStop = -ode.Infinity,
-        hiStop = ode.Infinity):
+    def addHingeJoint(self, body1, body2, anchor, axis,\
+                      loStop = -ode.Infinity,\
+                      hiStop = ode.Infinity):
 
-        anchor = add3(anchor, self.offset)
+        anchor += array(self.offset)
 
         joint = ode.HingeJoint(self.world)
         joint.attach(body1, body2)
@@ -374,11 +377,13 @@ class RagDoll():
 
         return joint
 
-    def addUniversalJoint(self, body1, body2, anchor, axis1, axis2,
-        loStop1 = -ode.Infinity, hiStop1 = ode.Infinity,
-        loStop2 = -ode.Infinity, hiStop2 = ode.Infinity):
+    def addUniversalJoint(self, body1, body2, anchor, axis1,\
+                          axis2, loStop1 = -ode.Infinity,\
+                          hiStop1 = ode.Infinity,\
+                          loStop2 = -ode.Infinity,\
+                          hiStop2 = ode.Infinity):
 
-        anchor = add3(anchor, self.offset)
+        anchor += array(self.offset)
 
         joint = ode.UniversalJoint(self.world)
         joint.attach(body1, body2)
@@ -395,27 +400,29 @@ class RagDoll():
 
         return joint
 
-    def addBallJoint(self, body1, body2, anchor, baseAxis, baseTwistUp,
-        flexLimit = pi, twistLimit = pi, flexForce = 0.0, twistForce = 0.0):
+    def addBallJoint(self, body1, body2, anchor, baseAxis,\
+                     baseTwistUp, flexLimit = pi,\
+                     twistLimit = pi, flexForce = 0,\
+                     twistForce = 0):
 
-        anchor = add3(anchor, self.offset)
+        anchor += array(self.offset)
 
         # create the joint
         joint = ode.BallJoint(self.world)
         joint.attach(body1, body2)
         joint.setAnchor(anchor)
 
-        # store the base orientation of the joint in the local coordinate system
-        #   of the primary body (because baseAxis and baseTwistUp may not be
-        #   orthogonal, the nearest vector to baseTwistUp but orthogonal to
-        #   baseAxis is calculated and stored with the joint)
+        '''store the base orientation of the joint in the local coordinate system
+        of the primary body (because baseAxis and baseTwistUp may not be
+        orthogonal, the nearest vector to baseTwistUp but orthogonal to
+        baseAxis is calculated and stored with the joint)'''
         joint.baseAxis = getBodyRelVec(body1, baseAxis)
         tempTwistUp = getBodyRelVec(body1, baseTwistUp)
         baseSide = norm3(cross(tempTwistUp, joint.baseAxis))
         joint.baseTwistUp = norm3(cross(joint.baseAxis, baseSide))
 
-        # store the base twist up vector (original version) in the local
-        #   coordinate system of the secondary body
+        '''store the base twist up vector (original version) in the local
+        coordinate system of the secondary body'''
         joint.baseTwistUp2 = getBodyRelVec(body2, baseTwistUp)
 
         # store joint rotation limits and resistive force factors
@@ -433,58 +440,66 @@ class RagDoll():
         for j in self.joints:
             if j.style == "ball":
                 # determine base and current attached body axes
-                baseAxis = rotate3(j.getBody(0).getRotation(), j.baseAxis)
+                baseAxis = rotate3(j.getBody(0).getRotation(),\
+                                   j.baseAxis)
                 currAxis = zaxis(j.getBody(1).getRotation())
 
                 # get angular velocity of attached body relative to fixed body
-                relAngVel = sub3(j.getBody(1).getAngularVel(),
-                    j.getBody(0).getAngularVel())
+                relAngVel = sub3(j.getBody(1).getAngularVel(),\
+                                 j.getBody(0).getAngularVel())
                 twistAngVel = project3(relAngVel, currAxis)
                 flexAngVel = sub3(relAngVel, twistAngVel)
 
                 # restrict limbs rotating too far from base axis
                 angle = acosdot3(currAxis, baseAxis)
+
                 if angle > j.flexLimit:
                     # add torque to push body back towards base axis
-                    j.getBody(1).addTorque(mul3(
-                        norm3(cross(currAxis, baseAxis)),
+                    j.getBody(1).addTorque(\
+                        mul3(norm3(cross(currAxis, baseAxis)),\
                         (angle - j.flexLimit) * j.flexForce))
 
                     # dampen flex to prevent bounceback
-                    j.getBody(1).addTorque(mul3(flexAngVel,
-                        -0.01 * j.flexForce))
+                    j.getBody(1).addTorque(\
+                            mul3(flexAngVel, -j.flexForce / 100))
 
-                # determine the base twist up vector for the current attached
-                #   body by applying the current joint flex to the fixed body's
-                #   base twist up vector
-                baseTwistUp = rotate3(j.getBody(0).getRotation(), j.baseTwistUp)
-                base2current = calcRotMatrix(norm3(cross(baseAxis, currAxis)),
-                    acosdot3(baseAxis, currAxis))
-                projBaseTwistUp = rotate3(base2current, baseTwistUp)
+                '''determine the base twist up vector for the current attached
+                body by applying the current joint flex to the fixed body's
+                base twist up vector'''
+                baseTwistUp = rotate3(j.getBody(0).getRotation(),\
+                                      j.baseTwistUp)
+                base2current = calcRotMatrix(\
+                                norm3(cross(baseAxis, currAxis)),\
+                                acosdot3(baseAxis, currAxis))
+                projBaseTwistUp = rotate3(base2current,\
+                                          baseTwistUp)
 
                 # determine the current twist up vector from the attached body
-                actualTwistUp = rotate3(j.getBody(1).getRotation(),
-                    j.baseTwistUp2)
+                actualTwistUp = rotate3(\
+                                j.getBody(1).getRotation(),\
+                                j.baseTwistUp2)
 
                 # restrict limbs twisting
                 angle = acosdot3(actualTwistUp, projBaseTwistUp)
+
                 if angle > j.twistLimit:
                     # add torque to rotate body back towards base angle
-                    j.getBody(1).addTorque(mul3(
-                        norm3(cross(actualTwistUp, projBaseTwistUp)),
+                    j.getBody(1).addTorque(\
+                            mul3(norm3(\
+                        cross(actualTwistUp, projBaseTwistUp)),
                         (angle - j.twistLimit) * j.twistForce))
 
                     # dampen twisting
-                    j.getBody(1).addTorque(mul3(twistAngVel,
-                        -0.01 * j.twistForce))
+                    j.getBody(1).addTorque(\
+                        mul3(twistAngVel, -j.twistForce / 100))
 
 
 def createCapsule(world, space, density, length, radius):
-    """Creates a capsule body and corresponding geom."""
+    """Creates a capsule body and corresponding geom.
 
-    # create capsule body (aligned along the z-axis so that it matches the
-    #   GeomCCylinder created below, which is aligned along the z-axis by
-    #   default)
+    create capsule body (aligned along the z-axis so that it matches the
+    GeomCCylinder created below, which is aligned along the z-axis by
+    default)"""
     body = ode.Body(world)
     M = ode.Mass()  
     M.setCapsule(density, 3, radius, length)
@@ -508,26 +523,23 @@ def near_callback(args, geom1, geom2):
     This function checks if the given geoms do collide and creates contact
     joints if they do.
     """
+    if not ode.areConnected(geom1.getBody(), geom2.getBody()):
+        # check if the objects collide
+        contacts = ode.collide(geom1, geom2)
 
-    if (ode.areConnected(geom1.getBody(), geom2.getBody())):
-        return
+        # create contact joints
+        world, contactgroup = args
 
-    # check if the objects collide
-    contacts = ode.collide(geom1, geom2)
-
-    # create contact joints
-    world, contactgroup = args
-    for c in contacts:
-        c.setBounce(0.2)
-        c.setMu(500) # 0-5 = very slippery, 50-500 = normal, 5000 = very sticky
-        j = ode.ContactJoint(world, contactgroup, c)
-        j.attach(geom1.getBody(), geom2.getBody())
+        for c in contacts:
+            c.setBounce(0.2)
+            c.setMu(500) # 0-5 = very slippery, 50-500 = normal, 5000 = very sticky
+            j = ode.ContactJoint(world, contactgroup, c)
+            j.attach(geom1.getBody(), geom2.getBody())
 
 def prepare_GL():
     """Setup basic OpenGL rendering with smooth shading and a single light."""
-
-    glClearColor(0.8, 0.8, 0.9, 0.0)
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glClearColor(0.8, 0.8, 0.9, 0)
+    glClear(16640)
     glEnable(GL_DEPTH_TEST)
     glEnable(GL_LIGHTING)
     glEnable(GL_NORMALIZE)
@@ -535,49 +547,48 @@ def prepare_GL():
 
     glMatrixMode(GL_PROJECTION)
     glLoadIdentity()
-    gluPerspective (45.0, 1.3333, 0.2, 20.0)
+    gluPerspective (45, 1.3333, 0.2, 20)
 
     glViewport(0, 0, 640, 480)
 
     glMatrixMode(GL_MODELVIEW)
     glLoadIdentity()
 
-    glLightfv(GL_LIGHT0,GL_POSITION,[0, 0, 1, 0])
-    glLightfv(GL_LIGHT0,GL_DIFFUSE,[1, 1, 1, 1])
-    glLightfv(GL_LIGHT0,GL_SPECULAR,[1, 1, 1, 1])
+    glLightfv(GL_LIGHT0, GL_POSITION, (0, 0, 1, 0))
+    glLightfv(GL_LIGHT0, GL_DIFFUSE, (1, 1, 1, 1))
+    glLightfv(GL_LIGHT0, GL_SPECULAR, (1, 1, 1, 1))
     glEnable(GL_LIGHT0)
 
     glEnable(GL_COLOR_MATERIAL)
     glColor3f(0.8, 0.8, 0.8)
 
-    gluLookAt(1.5, 4.0, 3.0, 0.5, 1.0, 0.0, 0.0, 1.0, 0.0)
-
+    gluLookAt(1.5, 4, 3, 0.5, 1, 0, 0, 1, 0)
 
 # polygon resolution for capsule bodies
-CAPSULE_SLICES = 16
-CAPSULE_STACKS = 12
+CAPSULE_SLICES, CAPSULE_STACKS = 16, 12
 
 def draw_body(body):
     """Draw an ODE body."""
-
     rot = makeOpenGLMatrix(body.getRotation(), body.getPosition())
+
     glPushMatrix()
+
     glMultMatrixd(rot)
+    
     if body.shape == "capsule":
-        cylHalfHeight = body.length / 2.0
-        glBegin(GL_QUAD_STRIP)
-        for i in range(0, CAPSULE_SLICES + 1):
-            angle = i / float(CAPSULE_SLICES) * 2.0 * pi
-            ca = cos(angle)
-            sa = sin(angle)
-            glNormal3f(ca, sa, 0)
-            glVertex3f(body.radius * ca, body.radius * sa, cylHalfHeight)
-            glVertex3f(body.radius * ca, body.radius * sa, -cylHalfHeight)
-        glEnd()
-        glTranslated(0, 0, cylHalfHeight)
-        glutSolidSphere(body.radius, CAPSULE_SLICES, CAPSULE_STACKS)
-        glTranslated(0, 0, -2.0 * cylHalfHeight)
-        glutSolidSphere(body.radius, CAPSULE_SLICES, CAPSULE_STACKS)
+        cylHalfHeight = body.length / 2
+        quadric = gluNewQuadric()
+        gluQuadricNormals(quadric, GLU_SMOOTH)						# // Create Smooth Normals
+        gluQuadricTexture(quadric, GL_TRUE)
+        glTranslatef(0, 0, -cylHalfHeight)
+        glutSolidSphere(body.radius, CAPSULE_SLICES,\
+                        CAPSULE_STACKS)
+        gluCylinder(quadric, body.radius, body.radius,\
+                    body.length, CAPSULE_SLICES, CAPSULE_STACKS)     
+        glTranslatef(0, 0, body.length)
+        glutSolidSphere(body.radius, CAPSULE_SLICES,\
+                        CAPSULE_STACKS)
+
     glPopMatrix()
 
 
@@ -619,7 +630,8 @@ def onIdle():
         return
 
     t = dt - (time.time() - lasttime)
-    if (t > 0):
+
+    if t > 0:
         time.sleep(t)
 
     glutPostRedisplay()
