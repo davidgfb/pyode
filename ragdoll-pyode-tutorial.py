@@ -1,4 +1,4 @@
-from time import time, sleep
+from time import time
 from random import uniform
 
 from math import *
@@ -609,8 +609,12 @@ def onKey(c, x, y):
     elif c == 'q' or c == 'Q':
         exit(0)
 
+t = 0
+
 def onDraw():
     """GLUT render callback."""
+    global t
+    
     prepare_GL()
 
     for b in bodies:
@@ -621,13 +625,16 @@ def onDraw():
 
     glutSwapBuffers()
 
+    #contador fps
+    t1 = time()
+    glutSetWindowTitle(str(round(1 / (t1 - t))))
+    t = t1
+
 def onIdle():
     """GLUT idle processing callback, performs ODE simulation step."""
     global Paused, lasttime, numiter
 
     if not Paused:
-        #t = dt - time() - lasttime
-
         glutPostRedisplay()
 
         for i in range(stepsPerFrame):
@@ -635,7 +642,7 @@ def onIdle():
             space.collide((world, contactgroup), near_callback)
 
             # Simulation step (with slo motion)
-            world.step(1/1000) #dt / stepsPerFrame / SloMo)
+            world.step(1/1000) #SloMo
 
             numiter += 1
 
@@ -645,11 +652,9 @@ def onIdle():
             # Remove all contact joints
             contactgroup.empty()
 
-        lasttime = time()
-
 # initialize GLUT
 glutInit()
-glutInitDisplayMode(GLUT_RGB | GLUT_DEPTH) #18 o GLUT_DOUBLE = vsync
+glutInitDisplayMode(16) #18 o GLUT_DOUBLE = vsync
 
 # create the program window
 x, y, width, height = 0, 0, 1280, 720
