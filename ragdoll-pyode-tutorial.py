@@ -547,9 +547,9 @@ def prepare_GL():
 
     glMatrixMode(GL_PROJECTION)
     glLoadIdentity()
-    gluPerspective (45, 1.3333, 0.2, 20)
+    gluPerspective (45, width / height, 0.2, 20)
 
-    glViewport(0, 0, 640, 480)
+    glViewport(0, 0, width, height)
 
     glMatrixMode(GL_MODELVIEW)
     glLoadIdentity()
@@ -591,86 +591,78 @@ def draw_body(body):
 
     glPopMatrix()
 
-
 def onKey(c, x, y):
     """GLUT keyboard callback."""
-
     global SloMo, Paused
 
     # set simulation speed
     if c >= '0' and c <= '9':
-        SloMo = 4 * int(c) + 1
+        SloMo = 4 * c + 1
+
     # pause/unpause simulation
     elif c == 'p' or c == 'P':
         Paused = not Paused
+
     # quit
     elif c == 'q' or c == 'Q':
         sys.exit(0)
 
-
 def onDraw():
     """GLUT render callback."""
-
     prepare_GL()
 
     for b in bodies:
         draw_body(b)
+        
     for b in ragdoll.bodies:
         draw_body(b)
 
     glutSwapBuffers()
 
-
 def onIdle():
     """GLUT idle processing callback, performs ODE simulation step."""
-
     global Paused, lasttime, numiter
 
-    if Paused:
-        return
+    if not Paused:
+        t = dt - (time.time() - lasttime)
 
-    t = dt - (time.time() - lasttime)
+        if t > 0:
+            time.sleep(t)
 
-    if t > 0:
-        time.sleep(t)
+        glutPostRedisplay()
 
-    glutPostRedisplay()
+        for i in range(stepsPerFrame):
+            # Detect collisions and create contact joints
+            space.collide((world, contactgroup), near_callback)
 
-    for i in range(stepsPerFrame):
-        # Detect collisions and create contact joints
-        space.collide((world, contactgroup), near_callback)
+            # Simulation step (with slo motion)
+            world.step(dt / stepsPerFrame / SloMo)
 
-        # Simulation step (with slo motion)
-        world.step(dt / stepsPerFrame / SloMo)
+            numiter += 1
 
-        numiter += 1
+            # apply internal ragdoll forces
+            ragdoll.update()
 
-        # apply internal ragdoll forces
-        ragdoll.update()
+            # Remove all contact joints
+            contactgroup.empty()
 
-        # Remove all contact joints
-        contactgroup.empty()
-
-    lasttime = time.time()
+        lasttime = time.time()
 
 # initialize GLUT
-glutInit([])
-glutInitDisplayMode(GLUT_RGB | GLUT_DEPTH | GLUT_DOUBLE)
+glutInit()
+glutInitDisplayMode(18)
 
 # create the program window
-x = 0
-y = 0
-width = 640
-height = 480
-glutInitWindowPosition(x, y);
-glutInitWindowSize(width, height);
-glutCreateWindow("PyODE Ragdoll Simulation")
+x, y, width, height = 0, 0, 1280, 720
+glutInitWindowPosition(x, y)
+glutInitWindowSize(width, height)
+glutCreateWindow("")
 
 # create an ODE world object
 world = ode.World()
-world.setGravity((0.0, -9.81, 0.0))
+world.setGravity((0, -10, 0))
 world.setERP(0.1)
-world.setCFM(1E-4)
+world.setCFM(1e-4)
 
 # create an ODE space object
 space = ode.Space()
@@ -678,17 +670,17 @@ space = ode.Space()
 # create a plane geom to simulate a floor
 floor = ode.GeomPlane(space, (0, 1, 0), 0)
 
-# create a list to store any ODE bodies which are not part of the ragdoll (this
-#   is needed to avoid Python garbage collecting these bodies)
+'''create a list to store any ODE bodies which are not part of the ragdoll (this
+is needed to avoid Python garbage collecting these bodies)'''
 bodies = []
 
-# create a joint group for the contact joints generated during collisions
-#   between two bodies collide
+'''create a joint group for the contact joints generated during collisions
+between two bodies collide'''
 contactgroup = ode.JointGroup()
 
 # set the initial simulation loop parameters
 fps = 60
-dt = 1.0 / fps
+dt = 1 / fps
 stepsPerFrame = 2
 SloMo = 1
 Paused = False
@@ -696,8 +688,8 @@ lasttime = time.time()
 numiter = 0
 
 # create the ragdoll
-ragdoll = RagDoll(world, space, 500, (0.0, 0.9, 0.0))
-print("total mass is %.1f kg (%.1f lbs)" % (ragdoll.totalMass,
+ragdoll = RagDoll(world, space, 500, (0, 0.9, 0))
+print("total mass is %.1f kg (%.1f lbs)" % (ragdoll.totalMass,\
     ragdoll.totalMass * 2.2))
 
 # create an obstacle
