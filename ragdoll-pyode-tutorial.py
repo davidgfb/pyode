@@ -604,18 +604,30 @@ def draw_body(body):
 def onKey(c, x, y):
     """GLUT keyboard callback."""
     global SloMo, Paused
+    
+    try:
+        # set simulation speed
+        c = int(c)
+        
+        if -1 < c < 10: 
+            SloMo = 4 * c + 1
 
-    # set simulation speed
-    if c >= '0' and c <= '9':
-        SloMo = 4 * c + 1
+    except:
+        print('e: c no es un numero')
 
-    # pause/unpause simulation
-    elif c == 'p' or c == 'P':
-        Paused = not Paused
+    try:
+        # pause/unpause simulation
+        c = c.decode("utf-8").lower()
 
-    # quit
-    elif c == 'q' or c == 'Q':
-        exit(0)
+        if c == 'p':
+            Paused = not Paused
+            
+        # quit
+        elif c == 'q':
+            exit(0)
+
+    except:
+        print('e: c no es un string')
 
 t = 0
 
@@ -695,14 +707,10 @@ between two bodies collide'''
 contactgroup = JointGroup()
 
 # set the initial simulation loop parameters
-fps = 60 
+fps, stepsPerFrame, SloMo, Paused, lasttime, numiter = 100, 2, 1,\
+                                                False, time(), 0
 dt = 1 / fps
-stepsPerFrame = 2
-SloMo = 1
-Paused = False
-lasttime = time()
-numiter = 0
-
+ 
 # create the ragdoll
 ragdoll = RagDoll(world, space, 500, (0, 0.9, 0))
 print("total mass is %.1f kg (%.1f lbs)" % (ragdoll.totalMass,\
