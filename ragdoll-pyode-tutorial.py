@@ -642,8 +642,6 @@ def onIdle():
     if not Paused:
         t = dt - time() + lasttime
 
-        print(t)
-
         if t > 0:
             sleep(t)
         
