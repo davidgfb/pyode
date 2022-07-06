@@ -1,4 +1,4 @@
-from time import time
+from time import time, sleep
 from random import uniform
 
 from math import pi, acos, cos, sin
@@ -7,7 +7,7 @@ from OpenGL.GL import glClearColor, glClear, glEnable,\
      GL_SMOOTH, glMatrixMode, GL_PROJECTION, glLoadIdentity,\
      glViewport, GL_MODELVIEW, glLightfv, GL_LIGHT0,\
      GL_POSITION, GL_DIFFUSE, GL_SPECULAR, GL_COLOR_MATERIAL,\
-     glColor3f, glPushMatrix, glMultMatrixd, glTranslatef,\
+     glColor3f, glPushMatrix, glMultMatrixf, glTranslatef,\
      glPopMatrix
 from OpenGL.GLU import gluPerspective, gluLookAt, gluNewQuadric,\
      gluQuadricNormals, GLU_SMOOTH, gluQuadricTexture,\
@@ -137,32 +137,30 @@ def calcRotMatrix(axis, angle):
     cosTheta = cos(angle)
     sinTheta = sin(angle)
     t = 1 - cosTheta
-    return (t * axis[0]**2 + cosTheta,
+    return (t * axis[0] ** 2 + cosTheta,
             t * axis[0] * axis[1] - sinTheta * axis[2],
             t * axis[0] * axis[2] + sinTheta * axis[1],
             t * axis[0] * axis[1] + sinTheta * axis[2],
-            t * axis[1]**2 + cosTheta,
+            t * axis[1] ** 2 + cosTheta,
             t * axis[1] * axis[2] - sinTheta * axis[0],
             t * axis[0] * axis[2] - sinTheta * axis[1],
             t * axis[1] * axis[2] + sinTheta * axis[0],
-            t * axis[2]**2 + cosTheta)
+            t * axis[2] ** 2 + cosTheta)
 
 def makeOpenGLMatrix(r, p):
-    """
-    Returns an OpenGL compatible (column-major, 4x4 homogeneous) transformation
+    """Returns an OpenGL compatible (column-major, 4x4 homogeneous) transformation
     matrix from ODE compatible (row-major, 3x3) rotation matrix r and position
-    vector p.
-    """
+    vector p."""
+
     return (r[0], r[3], r[6], 0,
             r[1], r[4], r[7], 0,
             r[2], r[5], r[8], 0,
             p[0], p[1], p[2], 1)
 
 def getBodyRelVec(b, v):
-    """
-    Returns the 3-vector v transformed into the local coordinate system of ODE
-    body b.
-    """
+    """Returns the 3-vector v transformed into the local coordinate system of ODE
+    body b."""
+
     return rotate3(invert3x3(b.getRotation()), v)
 
 
@@ -314,10 +312,8 @@ class RagDoll():
             self.leftHand, L_WRIST_POS, bkwdAxis, -0.1 * pi, 0.2 * pi)
 
     def addBody(self, p1, p2, radius):
-        """
-        Adds a capsule body between joint positions p1 and p2 and with given
-        radius to the ragdoll.
-        """
+        """Adds a capsule body between joint positions p1 and p2 and with given
+        radius to the ragdoll."""
         p1 = array(p1)
         p2 = array(p2)
         
@@ -535,12 +531,11 @@ def createCapsule(world, space, density, length, radius):
     return body, geom
 
 def near_callback(args, geom1, geom2):
-    """
-    Callback function for the collide() method.
+    """Callback function for the collide() method.
 
     This function checks if the given geoms do collide and creates contact
-    joints if they do.
-    """
+    joints if they do."""
+
     if not areConnected(geom1.getBody(), geom2.getBody()):
         # check if the objects collide
         contacts = collide(geom1, geom2)
@@ -590,7 +585,7 @@ def draw_body(body):
 
     glPushMatrix()
 
-    glMultMatrixd(rot)
+    glMultMatrixf(rot)
     
     if body.shape == "capsule":
         cylHalfHeight = body.length / 2
@@ -630,10 +625,7 @@ def onDraw():
     
     prepare_GL()
 
-    for b in bodies:
-        draw_body(b)
-        
-    for b in ragdoll.bodies:
+    for b in bodies + ragdoll.bodies:
         draw_body(b)
 
     glutSwapBuffers()
@@ -648,6 +640,13 @@ def onIdle():
     global Paused, lasttime, numiter
 
     if not Paused:
+        t = dt - time() + lasttime
+
+        print(t)
+
+        if t > 0:
+            sleep(t)
+        
         glutPostRedisplay()
 
         for i in range(stepsPerFrame):
@@ -655,7 +654,7 @@ def onIdle():
             space.collide((world, contactgroup), near_callback)
 
             # Simulation step (with slo motion)
-            world.step(1/1000) #SloMo
+            world.step(dt / stepsPerFrame / SloMo)
 
             numiter += 1
 
@@ -664,6 +663,8 @@ def onIdle():
 
             # Remove all contact joints
             contactgroup.empty()
+
+        lasttime = time()
 
 # initialize GLUT
 glutInit()
@@ -696,7 +697,7 @@ between two bodies collide'''
 contactgroup = JointGroup()
 
 # set the initial simulation loop parameters
-fps = 60 #?
+fps = 60 
 dt = 1 / fps
 stepsPerFrame = 2
 SloMo = 1
