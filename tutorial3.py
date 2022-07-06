@@ -1,36 +1,43 @@
-# pyODE example 3: Collision detection
-
-# Originally by Matthias Baas.
-# Updated by Pierre Gay to work without pygame or cgkit.
-
-import sys, os, random, time
-from math import *
-from OpenGL.GL import *
-from OpenGL.GLU import *
-from OpenGL.GLUT import *
-
-import ode
+from random import gauss, uniform
+from time import time, sleep
+from math import pi, cos, sin
+from OpenGL.GL import glViewport, glClearColor, glClear,\
+     glEnable, GL_DEPTH_TEST, glDisable, GL_LIGHTING,\
+     GL_NORMALIZE, glShadeModel, GL_FLAT, glMatrixMode,\
+     GL_PROJECTION, glLoadIdentity, GL_MODELVIEW, glLightfv,\
+     GL_LIGHT0, GL_POSITION, GL_DIFFUSE, GL_SPECULAR,\
+     glPushMatrix, glMultMatrixf, glScalef, glPopMatrix
+from OpenGL.GLU import gluPerspective, gluLookAt
+from OpenGL.GLUT import glutInit, glutInitDisplayMode,\
+     GLUT_RGB, glutInitWindowPosition, glutInitWindowSize,\
+     glutCreateWindow, glutKeyboardFunc, glutDisplayFunc,\
+     glutIdleFunc, glutMainLoop, glutSwapBuffers,\
+     glutPostRedisplay, glutSolidCube
+from ode import World, Body, Mass, GeomBox, collide,\
+     ContactJoint, Space, GeomPlane, JointGroup
+from numpy import array
+from numpy.linalg import norm
 
 # geometric utility functions
 def scalp (vec, scal):
-    vec[0] *= scal
-    vec[1] *= scal
-    vec[2] *= scal
-
+    vec = array(vec)
+    
+    vec *= scal
+    
 def length (vec):
-    return sqrt (vec[0]**2 + vec[1]**2 + vec[2]**2)
+    vec = array(vec)
+
+    return norm(vec)
 
 # prepare_GL
 def prepare_GL():
-    """Prepare drawing.
-    """
-
+    """Prepare drawing."""
     # Viewport
-    glViewport(0,0,640,480)
+    glViewport(0, 0, w, h)
 
     # Initialize
-    glClearColor(0.8,0.8,0.9,0)
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glClearColor(0.8, 0.8, 0.9, 0)
+    glClear(16640)
     glEnable(GL_DEPTH_TEST)
     glDisable(GL_LIGHTING)
     glEnable(GL_LIGHTING)
@@ -40,16 +47,16 @@ def prepare_GL():
     # Projection
     glMatrixMode(GL_PROJECTION)
     glLoadIdentity()
-    gluPerspective (45,1.3333,0.2,20)
+    gluPerspective (45, w / h, 0.2, 20)
 
     # Initialize ModelView matrix
     glMatrixMode(GL_MODELVIEW)
     glLoadIdentity()
 
     # Light source
-    glLightfv(GL_LIGHT0,GL_POSITION,[0,0,1,0])
-    glLightfv(GL_LIGHT0,GL_DIFFUSE,[1,1,1,1])
-    glLightfv(GL_LIGHT0,GL_SPECULAR,[1,1,1,1])
+    glLightfv(GL_LIGHT0, GL_POSITION, (0,0,1,0))
+    glLightfv(GL_LIGHT0, GL_DIFFUSE, (1,1,1,1))
+    glLightfv(GL_LIGHT0, GL_SPECULAR, (1,1,1,1))
     glEnable(GL_LIGHT0)
 
     # View transformation
@@ -57,31 +64,31 @@ def prepare_GL():
 
 # draw_body
 def draw_body(body):
-    """Draw an ODE body.
-    """
-
-    x,y,z = body.getPosition()
+    """Draw an ODE body."""
+    x, y, z = body.getPosition()
     R = body.getRotation()
-    rot = [R[0], R[3], R[6], 0.,
-           R[1], R[4], R[7], 0.,
-           R[2], R[5], R[8], 0.,
-           x, y, z, 1.0]
+    rot = (R[0], R[3], R[6], 0,
+           R[1], R[4], R[7], 0,
+           R[2], R[5], R[8], 0,
+           x, y, z, 1)
+
     glPushMatrix()
-    glMultMatrixd(rot)
-    if body.shape=="box":
-        sx,sy,sz = body.boxsize
+
+    glMultMatrixf(rot)
+
+    if body.shape == "box":
+        sx, sy, sz = body.boxsize
         glScalef(sx, sy, sz)
         glutSolidCube(1)
-    glPopMatrix()
 
+    glPopMatrix()
 
 # create_box
 def create_box(world, space, density, lx, ly, lz):
     """Create a box body and its corresponding geom."""
-
     # Create body
-    body = ode.Body(world)
-    M = ode.Mass()
+    body = Body(world)
+    M = Mass()
     M.setBox(density, lx, ly, lz)
     body.setMass(M)
 
@@ -90,7 +97,7 @@ def create_box(world, space, density, lx, ly, lz):
     body.boxsize = (lx, ly, lz)
 
     # Create a box geom for collision detection
-    geom = ode.GeomBox(space, lengths=body.boxsize)
+    geom = GeomBox(space, lengths = body.boxsize)
     geom.setBody(body)
 
     return body, geom
@@ -98,102 +105,93 @@ def create_box(world, space, density, lx, ly, lz):
 # drop_object
 def drop_object():
     """Drop an object into the scene."""
-
     global bodies, geom, counter, objcount
 
-    body, geom = create_box(world, space, 1000, 1.0,0.2,0.2)
-    body.setPosition( (random.gauss(0,0.1),3.0,random.gauss(0,0.1)) )
-    theta = random.uniform(0,2*pi)
-    ct = cos (theta)
-    st = sin (theta)
-    body.setRotation([ct, 0., -st, 0., 1., 0., st, 0., ct])
+    body, geom = create_box(world, space, 1000, 1, 0.2, 0.2)
+    body.setPosition((gauss(0, 0.1), 3.0, gauss(0, 0.1)))
+    theta = uniform(0, 2 * pi)
+    ct = cos(theta)
+    st = sin(theta)
+    body.setRotation((ct, 0, -st, 0, 1, 0, st, 0, ct))
     bodies.append(body)
     geoms.append(geom)
-    counter=0
-    objcount+=1
+    counter = 0
+    objcount += 1
 
 # explosion
 def explosion():
     """Simulate an explosion.
-
     Every object is pushed away from the origin.
-    The force is dependent on the objects distance from the origin.
-    """
+    The force is dependent on the objects distance from the origin."""
     global bodies
 
     for b in bodies:
-        l=b.getPosition ()
-        d = length (l)
-        a = max(0, 40000*(1.0-0.2*d*d))
-        l = [l[0] / 4, l[1], l[2] /4]
-        scalp (l, a / length (l))
+        l = b.getPosition()
+        d = length(l)
+        a = max(0, 4e4 * (1 - d ** 2 / 5))
+        l = array(l)
+        l /= (4, 1, 4)
+        scalp(l, a / length(l))
         b.addForce(l)
 
 # pull
 def pull():
     """Pull the objects back to the origin.
-
     Every object will be pulled back to the origin.
     Every couple of frames there'll be a thrust upwards so that
-    the objects won't stick to the ground all the time.
-    """
+    the objects won't stick to the ground all the time."""
     global bodies, counter
 
     for b in bodies:
-        l=list (b.getPosition ())
-        scalp (l, -1000 / length (l))
+        l = list(b.getPosition())
+        scalp(l, -1e3 / length(l))
         b.addForce(l)
-        if counter%60==0:
-            b.addForce((0,10000,0))
+
+        if counter % 60 == 0:
+            b.addForce((0, 1e4, 0))
 
 # Collision callback
 def near_callback(args, geom1, geom2):
     """Callback function for the collide() method.
 
     This function checks if the given geoms do collide and
-    creates contact joints if they do.
-    """
-
+    creates contact joints if they do."""
     # Check if the objects do collide
-    contacts = ode.collide(geom1, geom2)
+    contacts = collide(geom1, geom2)
 
     # Create contact joints
     world,contactgroup = args
+    
     for c in contacts:
         c.setBounce(0.2)
         c.setMu(5000)
-        j = ode.ContactJoint(world, contactgroup, c)
+        j = ContactJoint(world, contactgroup, c)
         j.attach(geom1.getBody(), geom2.getBody())
-
-
 
 ######################################################################
 
 # Initialize Glut
-glutInit ([])
+glutInit()
 
 # Open a window
-glutInitDisplayMode (GLUT_RGB | GLUT_DOUBLE)
+glutInitDisplayMode(GLUT_RGB)
 
-x = 0
-y = 0
-width = 640
-height = 480
-glutInitWindowPosition (x, y);
-glutInitWindowSize (width, height);
-glutCreateWindow ("testode")
+x, y, w, h = 0, 0, 1280, 720
+glutInitWindowPosition(x, y)
+glutInitWindowSize(w, h)
+glutCreateWindow("")
 
 # Create a world object
-world = ode.World()
-world.setGravity( (0,-9.81,0) )
+world = World()
+world.setGravity(10 * array((0, -1, 0)))
 world.setERP(0.8)
-world.setCFM(1E-5)
+world.setCFM(1e-5)
 
 # Create a space object
-space = ode.Space()
+space = Space()
 
 # Create a plane geom which prevent the objects from falling forever
-floor = ode.GeomPlane(space, (0,1,0), 0)
+floor = GeomPlane(space, (0, 1, 0), 0)
 
 # A list with ODE bodies
 bodies = []
@@ -203,59 +201,61 @@ geoms = []
 
 # A joint group for the contact joints that are generated whenever
 # two bodies collide
-contactgroup = ode.JointGroup()
+contactgroup = JointGroup()
 
 # Some variables used inside the simulation loop
-fps = 50
-dt = 1.0/fps
-running = True
-state = 0
-counter = 0
-objcount = 0
-lasttime = time.time()
-
+fps, running, state, counter, objcount, lasttime = 100, True, 0,\
+                                                0, 0, time()
+dt = 1 / fps
 
 # keyboard callback
 def _keyfunc (c, x, y):
-    sys.exit (0)
+    exit(0)
 
-glutKeyboardFunc (_keyfunc)
+glutKeyboardFunc(_keyfunc)
 
 # draw callback
 def _drawfunc ():
     # Draw the scene
     prepare_GL()
+
     for b in bodies:
         draw_body(b)
 
-    glutSwapBuffers ()
+    glutSwapBuffers()
 
-glutDisplayFunc (_drawfunc)
+glutDisplayFunc(_drawfunc)
 
 # idle callback
 def _idlefunc ():
     global counter, state, lasttime
 
-    t = dt - (time.time() - lasttime)
-    if (t > 0):
-        time.sleep(t)
+    t = dt - (time() - lasttime) #?
+    print(t)
+
+    if t > 0:
+        sleep(t)
 
     counter += 1
 
-    if state==0:
-        if counter==20:
+    if state == 0:
+        if counter == 20:
             drop_object()
-        if objcount==30:
-            state=1
-            counter=0
+
+        if objcount == 30:
+            state = 1
+            counter = 0
+            
     # State 1: Explosion and pulling back the objects
-    elif state==1:
-        if counter==100:
+    elif state == 1:
+        if counter == 100:
             explosion()
-        if counter>300:
+
+        if counter > 300:
             pull()
-        if counter==500:
-            counter=20
+
+        if counter == 500:
+            counter = 20
 
     glutPostRedisplay ()
 
@@ -264,16 +264,16 @@ def _idlefunc ():
 
     for i in range(n):
         # Detect collisions and create contact joints
-        space.collide((world,contactgroup), near_callback)
+        space.collide((world, contactgroup), near_callback)
 
         # Simulation step
-        world.step(dt/n)
+        world.step(dt / n)
 
         # Remove all contact joints
         contactgroup.empty()
 
-    lasttime = time.time()
+    lasttime = time()
 
-glutIdleFunc (_idlefunc)
+glutIdleFunc(_idlefunc)
 
-glutMainLoop ()
+glutMainLoop()
