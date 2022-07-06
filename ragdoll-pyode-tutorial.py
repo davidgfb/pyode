@@ -23,7 +23,7 @@ from ode import Infinity, Body, Mass, GeomCCylinder, FixedJoint,\
      ParamLoStop2, ParamHiStop2, BallJoint, areConnected,\
      collide, ContactJoint, World, Space, GeomPlane, JointGroup
 
-from numpy import array, cross, zeros, rot90 #, roll
+from numpy import array, cross, zeros
 from numpy.linalg import norm
 
 def add3(a, b):
@@ -132,10 +132,8 @@ def zaxis(m):
     return array(m).reshape(3, 3)[:, 2]
 
 def calcRotMatrix(axis, angle):
-    """
-    Returns the row-major 3x3 rotation matrix defining a rotation around axis by
-    angle.
-    """
+    """Returns the row-major 3x3 rotation matrix defining a rotation around axis by
+    angle. Esto conviene q lo haga opengl""" 
     cosTheta = cos(angle)
     sinTheta = sin(angle)
     t = 1 - cosTheta
