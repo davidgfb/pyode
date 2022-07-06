@@ -23,7 +23,7 @@ from ode import Infinity, Body, Mass, GeomCCylinder, FixedJoint,\
      ParamLoStop2, ParamHiStop2, BallJoint, areConnected,\
      collide, ContactJoint, World, Space, GeomPlane, JointGroup
 
-from numpy import array, cross, zeros 
+from numpy import array, cross, zeros, rot90 #, roll
 from numpy.linalg import norm
 
 def add3(a, b):
@@ -123,11 +123,13 @@ def rotate3(m, v):
 
 def invert3x3(m):
     """Returns the inversion (transpose) of 3x3 rotation matrix m."""
-    return (m[0], m[3], m[6], m[1], m[4], m[7], m[2], m[5], m[8])
+    m = array(m).reshape(3,3)
+    
+    return array((m[:, 0], m[:, 1], m[:, 2])).reshape(9)
 
 def zaxis(m):
     """Returns the z-axis vector from 3x3 (row major) rotation matrix m."""
-    return (m[2], m[5], m[8])
+    return array(m).reshape(3, 3)[:, 2]
 
 def calcRotMatrix(axis, angle):
     """
