@@ -23,7 +23,7 @@ from ode import Infinity, Body, Mass, GeomCCylinder, FixedJoint,\
      ParamLoStop2, ParamHiStop2, BallJoint, areConnected,\
      collide, ContactJoint, World, Space, GeomPlane, JointGroup
 
-from numpy import array, cross, zeros
+from numpy import array, cross, zeros, matmul
 from numpy.linalg import norm
 
 def add3(a, b):
@@ -80,8 +80,9 @@ def cross(a, b):
     b = array(b)
     return cross(a, b) == a * b? pasa a iterativo"""
 
-    return (a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2],
-        a[0] * b[1] - a[1] * b[0])
+    return (a[1] * b[2] - a[2] * b[1],\
+            a[2] * b[0] - a[0] * b[2],\
+            a[0] * b[1] - a[1] * b[0])
 
 def project3(v, d):
     """Returns projection of 3-vector v onto unit 3-vector d."""
@@ -117,9 +118,7 @@ def acosdot3(a, b):
 
 def rotate3(m, v):
     """Returns the rotation of 3-vector v by 3x3 (row major) matrix m."""
-    return (v[0] * m[0] + v[1] * m[1] + v[2] * m[2],
-        v[0] * m[3] + v[1] * m[4] + v[2] * m[5],
-        v[0] * m[6] + v[1] * m[7] + v[2] * m[8])
+    return matmul(array(v), array(m).reshape(3, 3).transpose())
 
 def invert3x3(m):
     """Returns the inversion (transpose) of 3x3 rotation matrix m."""
@@ -140,9 +139,11 @@ def calcRotMatrix(axis, angle):
     return (t * axis[0] ** 2 + cosTheta,
             t * axis[0] * axis[1] - sinTheta * axis[2],
             t * axis[0] * axis[2] + sinTheta * axis[1],
+
             t * axis[0] * axis[1] + sinTheta * axis[2],
             t * axis[1] ** 2 + cosTheta,
             t * axis[1] * axis[2] - sinTheta * axis[0],
+
             t * axis[0] * axis[2] - sinTheta * axis[1],
             t * axis[1] * axis[2] + sinTheta * axis[0],
             t * axis[2] ** 2 + cosTheta)
@@ -350,7 +351,8 @@ class RagDoll():
         ya = cross(za, xa)
         xa = norm3(cross(ya, za))
         ya = cross(za, xa)
-        rot = (xa[0], ya[0], za[0], xa[1], ya[1], za[1],\
+        rot = (xa[0], ya[0], za[0],\
+               xa[1], ya[1], za[1],\
                xa[2], ya[2], za[2])
 
         body.setPosition((p1 + p2) / 2)
