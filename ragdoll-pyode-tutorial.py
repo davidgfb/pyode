@@ -79,41 +79,46 @@ def cross(a, b):
     a = array(a)
     b = array(b)
     return cross(a, b) == a * b? pasa a iterativo"""
-    '''x, y, z = symbols('x y z')
-    c = Matrix(((x, y, z), a, b)).det()'''
+    x, y, z = symbols('x y z')
+    c = Matrix(((x, y, z), a, b)).det()
 
-    #print(c)
+    x1, y1, z1 = 0, 0, 0
 
-    #x1, y1, y2 
+    pos = 0
 
-    '''m = (False, False, False)
-    hay_X, hay_Y, hay_Z = m
-    
-    if x in c.free_symbols:
-        #print('hay x')
-        hay_X = True
-        #m = (0, 1, 1)
+    c1 = c.args
 
-    if y in c.free_symbols:
-        #print('hay y')
-        hay_Y = True
-        #m = (1, 0, 1)
+    try:
+        if float(c1[0]):
+            c1 = c1[0] * c1[1]
+        
+    except:
+        pass
+        #print('e: no es float')
 
-    if z in c.free_symbols:
-        #print('hay z')
-        hay_Z = True
-        #m = (1, 1, 0)
+    try:
+        len(c1)
 
-    #c = Poly(c).coeffs()
+    except:
+        c1 = (c1,)
+        #print('e: es un solo elemento')  
 
-    m = (hay_X, hay_Y, hay_Z)
+    for mono in c1:
+        mono1 = mono.free_symbols
+        coef = float(Poly(mono).coeffs()[0])
+        
+        if x in mono1:
+            x1 = coef
 
-    print(m, c, (a[1] * b[2] - a[2] * b[1],\
-            a[2] * b[0] - a[0] * b[2],\
-            a[0] * b[1] - a[1] * b[0]), '\n')'''
-    return (a[1] * b[2] - a[2] * b[1],\
-            a[2] * b[0] - a[0] * b[2],\
-            a[0] * b[1] - a[1] * b[0])
+        if y in mono1:
+            y1 = coef
+
+        if z in mono1:
+            z1 = coef
+
+        pos += 1
+
+    return (x1, y1, z1)
 
 def project3(v, d):
     """Returns projection of 3-vector v onto unit 3-vector d."""
@@ -188,7 +193,6 @@ def makeOpenGLMatrix(r, p):
 def getBodyRelVec(b, v):
     """Returns the 3-vector v transformed into the local coordinate system of ODE
     body b."""
-
     return rotate3(invert3x3(b.getRotation()), v)
 
 '''rotation directions are named by the third (z-axis) row of the 3x3 matrix,
