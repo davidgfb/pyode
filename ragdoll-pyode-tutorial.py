@@ -23,20 +23,22 @@ from ode import Infinity, Body, Mass, GeomCCylinder, FixedJoint,\
      ParamLoStop2, ParamHiStop2, BallJoint, areConnected,\
      collide, ContactJoint, World, Space, GeomPlane, JointGroup
 
-from numpy import array, cross, zeros, matmul
+from numpy import array, cross, zeros, matmul, float64, append
 from numpy.linalg import norm
+from sympy import Matrix, symbols, lambdify, Poly
+
+def a_Array(a, b):
+    return (array(a), array(b))
 
 def add3(a, b):
     """Returns the sum of 3-vectors a and b."""
-    a = array(a)
-    b = array(b)
+    a, b = a_Array(a, b)
 
     return a + b
 
 def sub3(a, b):
     """Returns the difference between 3-vectors a and b."""
-    a = array(a)
-    b = array(b)
+    a, b = a_Array(a, b)
 
     return a - b 
 
@@ -48,8 +50,7 @@ def mul3(v, s):
 
 def dist3(a, b):
     """Returns the distance between point 3-vectors a and b."""
-    a = array(a)
-    b = array(b)
+    a, b = a_Array(a, b)
 
     return norm(a - b)
 
@@ -69,8 +70,7 @@ def norm3(v):
 
 def dot3(a, b):
     """Returns the dot product of 3-vectors a and b."""
-    a = array(a)
-    b = array(b)
+    a, b = a_Array(a, b)
 
     return a @ b
 
@@ -79,7 +79,38 @@ def cross(a, b):
     a = array(a)
     b = array(b)
     return cross(a, b) == a * b? pasa a iterativo"""
+    '''x, y, z = symbols('x y z')
+    c = Matrix(((x, y, z), a, b)).det()'''
 
+    #print(c)
+
+    #x1, y1, y2 
+
+    '''m = (False, False, False)
+    hay_X, hay_Y, hay_Z = m
+    
+    if x in c.free_symbols:
+        #print('hay x')
+        hay_X = True
+        #m = (0, 1, 1)
+
+    if y in c.free_symbols:
+        #print('hay y')
+        hay_Y = True
+        #m = (1, 0, 1)
+
+    if z in c.free_symbols:
+        #print('hay z')
+        hay_Z = True
+        #m = (1, 1, 0)
+
+    #c = Poly(c).coeffs()
+
+    m = (hay_X, hay_Y, hay_Z)
+
+    print(m, c, (a[1] * b[2] - a[2] * b[1],\
+            a[2] * b[0] - a[0] * b[2],\
+            a[0] * b[1] - a[1] * b[0]), '\n')'''
     return (a[1] * b[2] - a[2] * b[1],\
             a[2] * b[0] - a[0] * b[2],\
             a[0] * b[1] - a[1] * b[0])
@@ -101,8 +132,8 @@ def project3(v, d):
 
 def acosdot3(a, b):
     """Returns the angle between unit 3-vectors a and b."""
-    a = array(a)
-    b = array(b)
+    a, b = a_Array(a, b)
+
     x = a @ b
 
     if x < -1:
@@ -122,13 +153,11 @@ def rotate3(m, v):
 
 def invert3x3(m):
     """Returns the inversion (transpose) of 3x3 rotation matrix m."""
-    m = array(m).reshape(3,3)
-    
-    return array((m[:, 0], m[:, 1], m[:, 2])).reshape(9)
+    return array(m).reshape(3,3).transpose().reshape(9)
 
 def zaxis(m):
     """Returns the z-axis vector from 3x3 (row major) rotation matrix m."""
-    return array(m).reshape(3, 3)[:, 2]
+    return array(m).reshape(3, 3).transpose()[2]
 
 def calcRotMatrix(axis, angle):
     """Returns the row-major 3x3 rotation matrix defining a rotation around axis by
@@ -152,18 +181,16 @@ def makeOpenGLMatrix(r, p):
     """Returns an OpenGL compatible (column-major, 4x4 homogeneous) transformation
     matrix from ODE compatible (row-major, 3x3) rotation matrix r and position
     vector p."""
+    r = array(r).reshape(3, 3).transpose().tolist() 
+    r = (r[0] + [0], r[1] + [0], r[2] + [0], list(p) + [1])
 
-    return (r[0], r[3], r[6], 0,
-            r[1], r[4], r[7], 0,
-            r[2], r[5], r[8], 0,
-            p[0], p[1], p[2], 1)
+    return tuple(array(r).reshape(16))
 
 def getBodyRelVec(b, v):
     """Returns the 3-vector v transformed into the local coordinate system of ODE
     body b."""
 
     return rotate3(invert3x3(b.getRotation()), v)
-
 
 '''rotation directions are named by the third (z-axis) row of the 3x3 matrix,
 because ODE capsules are oriented along the z-axis'''
@@ -225,10 +252,8 @@ R_TOES_POS = R_ANKLE_POS + k
 L_TOES_POS = L_ANKLE_POS + k
 
 class RagDoll():
-    def __init__(self, world, space, density,\
-                 offset = zeros(3)):
+    def __init__(self, world, space, density, offset = zeros(3)):
         """Creates a ragdoll of standard size at the given offset."""
-
         self.world = world
         self.space = space
         self.density = density
@@ -631,7 +656,7 @@ def onKey(c, x, y):
     except:
         print('e: c no es un string')
 
-t = 0
+
 
 def onDraw():
     """GLUT render callback."""
@@ -651,7 +676,7 @@ def onDraw():
 
 def onIdle():
     """GLUT idle processing callback, performs ODE simulation step."""
-    global Paused, lasttime, numiter
+    global Paused, lasttime, numiter, t1
 
     if not Paused:
         t = dt - time() + lasttime
@@ -677,6 +702,8 @@ def onIdle():
             contactgroup.empty()
 
         lasttime = time()
+
+t = 0
 
 # initialize GLUT
 glutInit()
@@ -734,4 +761,7 @@ glutIdleFunc(onIdle)
 
 # enter the GLUT event loop
 glutMainLoop()
+
+
+
 
