@@ -23,9 +23,9 @@ from ode import Infinity, Body, Mass, GeomCCylinder, FixedJoint,\
      ParamLoStop2, ParamHiStop2, BallJoint, areConnected,\
      collide, ContactJoint, World, Space, GeomPlane, JointGroup
 
-from numpy import array, cross, zeros, matmul, float64, append
+from numpy import array, cross, zeros, matmul
 from numpy.linalg import norm
-from sympy import Matrix, symbols, lambdify, Poly
+from sympy import Matrix, symbols, Poly
 
 def a_Array(a, b):
     return (array(a), array(b))
