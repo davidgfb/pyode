@@ -86,34 +86,34 @@ def cross(a, b):
 
     pos = 0
 
-    c1 = c.args
+    args = c.args
 
     try:
-        if float(c1[0]):
-            c1 = c1[0] * c1[1]
+        if float(args[0]):
+            args = args[0] * args[1]
         
     except:
         pass
         #print('e: no es float')
 
     try:
-        len(c1)
+        len(args)
 
     except:
-        c1 = (c1,)
+        args = (args,)
         #print('e: es un solo elemento')  
 
-    for mono in c1:
-        mono1 = mono.free_symbols
+    for mono in args:
+        literal = mono.free_symbols
         coef = float(Poly(mono).coeffs()[0])
         
-        if x in mono1:
+        if x in literal:
             x1 = coef
 
-        if y in mono1:
+        if y in literal:
             y1 = coef
 
-        if z in mono1:
+        if z in literal:
             z1 = coef
 
         pos += 1
