@@ -75,17 +75,10 @@ def dot3(a, b):
     return a @ b
 
 def cross(a, b):
-    """Returns the cross product of 3-vectors a and b.
-    a = array(a)
-    b = array(b)
-    return cross(a, b) == a * b? pasa a iterativo"""
+    """Returns the cross product of 3-vectors a and b."""
     x, y, z = symbols('x y z')
-    c = Matrix(((x, y, z), a, b)).det()
-
-    x1, y1, z1 = 0, 0, 0
-
-    pos = 0
-
+    c, x1, y1, z1, pos = Matrix(((x, y, z), a, b)).det(), 0, 0,\
+                         0, 0
     args = c.args
 
     try:
