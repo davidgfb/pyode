@@ -182,9 +182,8 @@ def makeOpenGLMatrix(r, p):
     matrix from ODE compatible (row-major, 3x3) rotation matrix r and position
     vector p."""
     r = array(r).reshape(3, 3).transpose().tolist() 
-    r = (r[0] + [0], r[1] + [0], r[2] + [0], list(p) + [1])
 
-    return tuple(array(r).reshape(16))
+    return (r[0] + [0] + r[1] + [0] + r[2] + [0] + list(p) + [1])
 
 def getBodyRelVec(b, v):
     """Returns the 3-vector v transformed into the local coordinate system of ODE
