@@ -76,42 +76,9 @@ def dot3(a, b):
 
 def cross(a, b):
     """Returns the cross product of 3-vectors a and b."""
-    x, y, z = symbols('x y z')
-    c, x1, y1, z1, pos = Matrix(((x, y, z), a, b)).det(), 0, 0,\
-                         0, 0
-    args = c.args
-
-    try:
-        if float(args[0]):
-            args = args[0] * args[1]
-        
-    except:
-        pass
-        #print('e: no es float')
-
-    try:
-        len(args)
-
-    except:
-        args = (args,)
-        #print('e: es un solo elemento')  
-
-    for mono in args:
-        literal = mono.free_symbols
-        coef = float(Poly(mono).coeffs()[0])
-        
-        if x in literal:
-            x1 = coef
-
-        if y in literal:
-            y1 = coef
-
-        if z in literal:
-            z1 = coef
-
-        pos += 1
-
-    return (x1, y1, z1)
+    return (a[1] * b[2] - a[2] * b[1],\
+            a[2] * b[0] - a[0] * b[2],\
+            a[0] * b[1] - a[1] * b[0])
 
 def project3(v, d):
     """Returns projection of 3-vector v onto unit 3-vector d."""
@@ -336,11 +303,10 @@ class RagDoll():
     def addBody(self, p1, p2, radius):
         """Adds a capsule body between joint positions p1 and p2 and with given
         radius to the ragdoll."""
-        p1 = array(p1)
-        p2 = array(p2)
+        p1,p2 = a_Array(p1,p2)
         
-        p1 = p1 + self.offset
-        p2 = p2 + self.offset
+        p1 += self.offset
+        p2 += self.offset
 
         # cylinder length not including endcaps, make capsules overlap by half
         #   radius at joints
@@ -372,10 +338,9 @@ class RagDoll():
         ya = cross(za, xa)
         xa = norm3(cross(ya, za))
         ya = cross(za, xa)
-        rot = (xa[0], ya[0], za[0],\
-               xa[1], ya[1], za[1],\
-               xa[2], ya[2], za[2])
 
+        rot = array((xa, ya, za)).transpose().reshape(9)
+        
         body.setPosition((p1 + p2) / 2)
         body.setRotation(rot)
 
@@ -597,18 +562,25 @@ def prepare_GL():
     glEnable(GL_COLOR_MATERIAL)
     glColor3f(0.8, 0.8, 0.8)
 
-    gluLookAt(1.5, 4, 3, 0.5, 1, 0, 0, 1, 0)
+    '''eyeX, eyeY, eyeZ
+    Specifies the position of the eye point.
+
+    centerX, centerY, centerZ
+    Specifies the position of the reference point.
+
+    upX, upY, upZ'''
+
+    gluLookAt(1.5,4,3, 0.5,1,0, 0,1,0)
 
 # polygon resolution for capsule bodies
 CAPSULE_SLICES, CAPSULE_STACKS = 16, 12
 
 def draw_body(body):
     """Draw an ODE body."""
-    rot = makeOpenGLMatrix(body.getRotation(), body.getPosition())
-
     glPushMatrix()
 
-    glMultMatrixf(rot)
+    glMultMatrixf(makeOpenGLMatrix(body.getRotation(),\
+                                   body.getPosition()))
     
     if body.shape == "capsule":
         cylHalfHeight = body.length / 2
