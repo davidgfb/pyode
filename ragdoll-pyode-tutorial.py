@@ -214,7 +214,10 @@ k = FOOT_LEN * bkwdAxis
 R_TOES_POS = R_ANKLE_POS + k
 L_TOES_POS = L_ANKLE_POS + k
 
-class RagDoll():
+cuerpos = {}
+nCuerpo = 0
+
+class Ragdoll():
     def __init__(self, world, space, density, offset = zeros(3)):
         """Creates a ragdoll of standard size at the given offset."""
         self.world = world
@@ -228,24 +231,25 @@ class RagDoll():
         self.offset = offset
 
         k = (CHEST_W / 2, CHEST_H, 0)
-        self.chest = self.addBody(k * j, k, 0.13)
+        
+        self.chest = self.addBody(k * j, k, 0.13) #0
         self.belly = self.addBody((0, CHEST_H - 0.1, 0),
-                                  (0, HIP_H + 0.1, 0), 0.125)
+                                  (0, HIP_H + 0.1, 0), 0.125) #1
         self.midSpine = self.addFixedJoint(self.chest, self.belly)
         self.pelvis = self.addBody((-PELVIS_W / 2, HIP_H, 0),
-                                  (PELVIS_W / 2, HIP_H, 0), 0.125)
+                               (PELVIS_W / 2, HIP_H, 0), 0.125) #2
         self.lowSpine = self.addFixedJoint(self.belly,\
                                            self.pelvis)
 
         self.head = self.addBody((0, BROW_H, 0), (0, MOUTH_H, 0),\
-                                 0.11)
+                                 0.11) #3
 
         k = pi / 4
         self.neck = self.addBallJoint(self.chest, self.head,\
             (0, NECK_H, 0), -upAxis, bkwdAxis, k, k, 80, 40)
 
         self.rightUpperLeg = self.addBody(R_HIP_POS, R_KNEE_POS,\
-                                          0.11)
+                                          0.11) #4
 
         k = -pi / 10
         l = -0.15 * pi
@@ -257,52 +261,64 @@ class RagDoll():
                                 rightAxis, k, n,\
                                         l, m)
         self.leftUpperLeg = self.addBody(L_HIP_POS, L_KNEE_POS,\
-                                         0.11)
+                                         0.11) #5
         self.leftHip = self.addUniversalJoint(self.pelvis,\
                                 self.leftUpperLeg, L_HIP_POS,\
                                 fwdAxis, rightAxis, k, n,\
                                               l, m)
 
-        self.rightLowerLeg = self.addBody(R_KNEE_POS, R_ANKLE_POS, 0.09)
+        self.rightLowerLeg = self.addBody(R_KNEE_POS,\
+                                          R_ANKLE_POS, 0.09) #6
         self.rightKnee = self.addHingeJoint(self.rightUpperLeg,
             self.rightLowerLeg, R_KNEE_POS, leftAxis, 0.0, pi * 0.75)
-        self.leftLowerLeg = self.addBody(L_KNEE_POS, L_ANKLE_POS, 0.09)
+        self.leftLowerLeg = self.addBody(L_KNEE_POS, L_ANKLE_POS,\
+                                         0.09) #7
         self.leftKnee = self.addHingeJoint(self.leftUpperLeg,
             self.leftLowerLeg, L_KNEE_POS, leftAxis, 0.0, pi * 0.75)
 
-        self.rightFoot = self.addBody(R_HEEL_POS, R_TOES_POS, 0.09)
+        self.rightFoot = self.addBody(R_HEEL_POS, R_TOES_POS,\
+                                      0.09) #8
         self.rightAnkle = self.addHingeJoint(self.rightLowerLeg,
             self.rightFoot, R_ANKLE_POS, rightAxis, -0.1 * pi, 0.05 * pi)
-        self.leftFoot = self.addBody(L_HEEL_POS, L_TOES_POS, 0.09)
+        self.leftFoot = self.addBody(L_HEEL_POS, L_TOES_POS,\
+                                     0.09) #9
         self.leftAnkle = self.addHingeJoint(self.leftLowerLeg,
             self.leftFoot, L_ANKLE_POS, rightAxis, -0.1 * pi, 0.05 * pi)
 
-        self.rightUpperArm = self.addBody(R_SHOULDER_POS, R_ELBOW_POS, 0.08)
+        self.rightUpperArm = self.addBody(R_SHOULDER_POS,\
+                                          R_ELBOW_POS, 0.08) #10
         self.rightShoulder = self.addBallJoint(self.chest, self.rightUpperArm,
             R_SHOULDER_POS, norm3((-1.0, -1.0, 4.0)), (0.0, 0.0, 1.0), pi * 0.5,
             pi * 0.25, 150.0, 100.0)
-        self.leftUpperArm = self.addBody(L_SHOULDER_POS, L_ELBOW_POS, 0.08)
+        self.leftUpperArm = self.addBody(L_SHOULDER_POS,\
+                                         L_ELBOW_POS, 0.08) #11
         self.leftShoulder = self.addBallJoint(self.chest, self.leftUpperArm,
             L_SHOULDER_POS, norm3((1.0, -1.0, 4.0)), (0.0, 0.0, 1.0), pi * 0.5,
             pi * 0.25, 150.0, 100.0)
 
-        self.rightForeArm = self.addBody(R_ELBOW_POS, R_WRIST_POS, 0.075)
+        self.rightForeArm = self.addBody(R_ELBOW_POS,\
+                                         R_WRIST_POS, 0.075) #12
         self.rightElbow = self.addHingeJoint(self.rightUpperArm,
             self.rightForeArm, R_ELBOW_POS, downAxis, 0.0, 0.6 * pi)
-        self.leftForeArm = self.addBody(L_ELBOW_POS, L_WRIST_POS, 0.075)
+        self.leftForeArm = self.addBody(L_ELBOW_POS, L_WRIST_POS,\
+                                        0.075) #13
         self.leftElbow = self.addHingeJoint(self.leftUpperArm,
             self.leftForeArm, L_ELBOW_POS, upAxis, 0.0, 0.6 * pi)
 
-        self.rightHand = self.addBody(R_WRIST_POS, R_FINGERS_POS, 0.075)
+        self.rightHand = self.addBody(R_WRIST_POS, R_FINGERS_POS,\
+                                      0.075) #14
         self.rightWrist = self.addHingeJoint(self.rightForeArm,
             self.rightHand, R_WRIST_POS, fwdAxis, -0.1 * pi, 0.2 * pi)
-        self.leftHand = self.addBody(L_WRIST_POS, L_FINGERS_POS, 0.075)
+        self.leftHand = self.addBody(L_WRIST_POS, L_FINGERS_POS,\
+                                     0.075) #15
         self.leftWrist = self.addHingeJoint(self.leftForeArm,
             self.leftHand, L_WRIST_POS, bkwdAxis, -0.1 * pi, 0.2 * pi)
 
     def addBody(self, p1, p2, radius):
         """Adds a capsule body between joint positions p1 and p2 and with given
         radius to the ragdoll."""
+        global cuerpos, nCuerpo
+        
         p1,p2 = a_Array(p1,p2)
         
         p1 += self.offset
@@ -311,8 +327,11 @@ class RagDoll():
         # cylinder length not including endcaps, make capsules overlap by half
         #   radius at joints
         cyllen = norm(p1 - p2) - radius
-
         body = Body(self.world)
+
+        cuerpos[nCuerpo] = body
+        nCuerpo += 1
+        
         m = Mass()
         m.setCapsule(self.density, 3, radius, cyllen)
         body.setMass(m)
@@ -562,15 +581,14 @@ def prepare_GL():
     glEnable(GL_COLOR_MATERIAL)
     glColor3f(0.8, 0.8, 0.8)
 
-    '''eyeX, eyeY, eyeZ
-    Specifies the position of the eye point.
+    x,y,z = cuerpos[0].getPosition()
+    '''{0:chest, 1:belly, 2:pelvis, 3:head, 4:rightUpperLeg,\
+        5:leftUpperLeg, 6:rightLowerLeg, 7:leftLowerLeg,\
+        8:rightFoot, 9:leftFoot, 10:rightUpperArm,\
+        11:leftUpperArm, 12:rightForeArm, 13:leftForeArm,\
+        14:rightHand, 15:leftHand}'''
 
-    centerX, centerY, centerZ
-    Specifies the position of the reference point.
-
-    upX, upY, upZ'''
-
-    gluLookAt(1.5,4,3, 0.5,1,0, 0,1,0)
+    gluLookAt(2,4,3, x,y,z, 0,1,0)
 
 # polygon resolution for capsule bodies
 CAPSULE_SLICES, CAPSULE_STACKS = 16, 12
@@ -709,7 +727,7 @@ fps, stepsPerFrame, SloMo, Paused, lasttime, numiter = 100, 2, 1,\
 dt = 1 / fps
  
 # create the ragdoll
-ragdoll = RagDoll(world, space, 500, (0, 0.9, 0))
+ragdoll = Ragdoll(world, space, 500, (0, 0.9, 0))
 print("total mass is %.1f kg (%.1f lbs)" % (ragdoll.totalMass,\
     ragdoll.totalMass * 2.2))
 
