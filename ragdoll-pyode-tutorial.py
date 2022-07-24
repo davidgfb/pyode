@@ -214,8 +214,7 @@ k = FOOT_LEN * bkwdAxis
 R_TOES_POS = R_ANKLE_POS + k
 L_TOES_POS = L_ANKLE_POS + k
 
-cuerpos = {}
-nCuerpo = 0
+cuerpos, nCuerpo = {}, 0
 
 class Ragdoll():
     def __init__(self, world, space, density, offset = zeros(3)):
@@ -251,10 +250,7 @@ class Ragdoll():
         self.rightUpperLeg = self.addBody(R_HIP_POS, R_KNEE_POS,\
                                           0.11) #4
 
-        k = -pi / 10
-        l = -0.15 * pi
-        m = 0.75 * pi
-        n = 0.3 * pi
+        k, l, m, n = -pi / 10, -0.15 * pi, 0.75 * pi, 0.3 * pi
         self.rightHip = self.addUniversalJoint(self.pelvis,\
                                         self.rightUpperLeg,\
                                             R_HIP_POS, bkwdAxis,\
@@ -514,10 +510,8 @@ class Ragdoll():
                     j.getBody(1).addTorque(\
                         mul3(twistAngVel, -j.twistForce / 100))
 
-
 def createCapsule(world, space, density, length, radius):
     """Creates a capsule body and corresponding geom.
-
     create capsule body (aligned along the z-axis so that it matches the
     GeomCCylinder created below, which is aligned along the z-axis by
     default)"""
@@ -539,10 +533,8 @@ def createCapsule(world, space, density, length, radius):
 
 def near_callback(args, geom1, geom2):
     """Callback function for the collide() method.
-
     This function checks if the given geoms do collide and creates contact
     joints if they do."""
-
     if not areConnected(geom1.getBody(), geom2.getBody()):
         # check if the objects collide
         contacts = collide(geom1, geom2)
@@ -581,7 +573,7 @@ def prepare_GL():
     glEnable(GL_COLOR_MATERIAL)
     glColor3f(0.8, 0.8, 0.8)
 
-    x,y,z = cuerpos[0].getPosition()
+    x,y,z = cuerpos[2].getPosition()
     '''{0:chest, 1:belly, 2:pelvis, 3:head, 4:rightUpperLeg,\
         5:leftUpperLeg, 6:rightLowerLeg, 7:leftLowerLeg,\
         8:rightFoot, 9:leftFoot, 10:rightUpperArm,\
