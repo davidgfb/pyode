@@ -412,6 +412,7 @@ class Ragdoll():
                               acosdot3(baseAxis, currAxis)
                 cosTheta, sinTheta = cos(angle), sin(angle)
                 t, a0, a1, a2 = 1 - cosTheta, axis[0], axis[1], axis[2]
+
                 base2current = (t * a0 ** 2 + cosTheta,
                                 t * a0 * a1 - sinTheta * a2,
                                 t * a0 * a2 + sinTheta * a1,
@@ -423,6 +424,16 @@ class Ragdoll():
                                 t * a0 * a2 - sinTheta * a1,
                                 t * a1 * a2 + sinTheta * a0,
                                 t * a2 ** 2 + cosTheta)
+
+                '''from scipy.spatial.transform import Rotation
+
+                r = Rotation.from_euler('xyz', axis, degrees=False)
+                #print('\n\n',r.as_matrix(), axis)
+                v = Rotation.from_euler('x', angle, degrees=False) #yz
+                #print('\n\n',v.as_matrix(), angle)
+                
+                print('\n\n',(r * v).as_matrix(),\
+                      base2current)'''
 
                 projBaseTwistUp = rotate3(base2current,\
                                           baseTwistUp)
