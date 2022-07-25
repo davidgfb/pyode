@@ -23,36 +23,11 @@ from ode import Infinity, Body, Mass, GeomCCylinder, FixedJoint,\
      ParamLoStop2, ParamHiStop2, BallJoint, areConnected,\
      collide, ContactJoint, World, Space, GeomPlane, JointGroup
 
-from numpy import array, cross, zeros, matmul
+from numpy import array, cross, zeros
 from numpy.linalg import norm
-from sympy import Matrix, symbols, Poly
 
 def a_Array(a, b):
     return (array(a), array(b))
-
-def add3(a, b):
-    """Returns the sum of 3-vectors a and b."""
-    a, b = a_Array(a, b)
-
-    return a + b
-
-def sub3(a, b):
-    """Returns the difference between 3-vectors a and b."""
-    a, b = a_Array(a, b)
-
-    return a - b 
-
-def mul3(v, s):
-    """Returns 3-vector v multiplied by scalar s."""
-    v = array(v)
-
-    return s * v
-
-def dist3(a, b):
-    """Returns the distance between point 3-vectors a and b."""
-    a, b = a_Array(a, b)
-
-    return norm(a - b)
 
 def norm3(v):
     """Returns the unit length 3-vector parallel to 3-vector v."""
@@ -60,40 +35,16 @@ def norm3(v):
     l = norm(v)
     normalizado = zeros(3)
     
-    try:
+    if not l == 0:
         normalizado = v / l 
-
-    except:    
-        print('e: division entre 0')
 
     return normalizado
 
-def dot3(a, b):
-    """Returns the dot product of 3-vectors a and b."""
-    a, b = a_Array(a, b)
-
-    return a @ b
-
-def cross(a, b):
-    """Returns the cross product of 3-vectors a and b."""
-    return (a[1] * b[2] - a[2] * b[1],\
-            a[2] * b[0] - a[0] * b[2],\
-            a[0] * b[1] - a[1] * b[0])
-
 def project3(v, d):
-    """Returns projection of 3-vector v onto unit 3-vector d."""
-    v = array(v)
-    l = norm(v)
+    """Returns projection of 3-vector v onto unit 3-vector d."""    
     proyectado = zeros(3)
-
-    try:
-        normalizado = v / l
-        proyectado = normalizado @ d * array(v)
-
-    except:   
-        print('e: division entre 0')
             
-    return proyectado
+    return norm3(v) @ d * array(v)
 
 def acosdot3(a, b):
     """Returns the angle between unit 3-vectors a and b."""
@@ -112,48 +63,17 @@ def acosdot3(a, b):
 
     return angulo
 
+def traspuesta(v):
+    return array(v).reshape(3, 3).transpose()
+
 def rotate3(m, v):
     """Returns the rotation of 3-vector v by 3x3 (row major) matrix m."""
-    return matmul(array(v), array(m).reshape(3, 3).transpose())
-
-def invert3x3(m):
-    """Returns the inversion (transpose) of 3x3 rotation matrix m."""
-    return array(m).reshape(3,3).transpose().reshape(9)
-
-def zaxis(m):
-    """Returns the z-axis vector from 3x3 (row major) rotation matrix m."""
-    return array(m).reshape(3, 3).transpose()[2]
-
-def calcRotMatrix(axis, angle):
-    """Returns the row-major 3x3 rotation matrix defining a rotation around axis by
-    angle. Esto conviene q lo haga opengl""" 
-    cosTheta = cos(angle)
-    sinTheta = sin(angle)
-    t = 1 - cosTheta
-    return (t * axis[0] ** 2 + cosTheta,
-            t * axis[0] * axis[1] - sinTheta * axis[2],
-            t * axis[0] * axis[2] + sinTheta * axis[1],
-
-            t * axis[0] * axis[1] + sinTheta * axis[2],
-            t * axis[1] ** 2 + cosTheta,
-            t * axis[1] * axis[2] - sinTheta * axis[0],
-
-            t * axis[0] * axis[2] - sinTheta * axis[1],
-            t * axis[1] * axis[2] + sinTheta * axis[0],
-            t * axis[2] ** 2 + cosTheta)
-
-def makeOpenGLMatrix(r, p):
-    """Returns an OpenGL compatible (column-major, 4x4 homogeneous) transformation
-    matrix from ODE compatible (row-major, 3x3) rotation matrix r and position
-    vector p."""
-    r = array(r).reshape(3, 3).transpose().tolist() 
-
-    return (r[0] + [0] + r[1] + [0] + r[2] + [0] + list(p) + [1])
+    return array(v) @ traspuesta(m)       
 
 def getBodyRelVec(b, v):
     """Returns the 3-vector v transformed into the local coordinate system of ODE
     body b."""
-    return rotate3(invert3x3(b.getRotation()), v)
+    return rotate3(traspuesta(b.getRotation()).reshape(9), v)
 
 '''rotation directions are named by the third (z-axis) row of the 3x3 matrix,
 because ODE capsules are oriented along the z-axis'''
@@ -344,7 +264,7 @@ class Ragdoll():
         # define body rotation automatically from body axis
         za = norm3(p2 - p1) #!
 
-        if abs(dot3(za, (1, 0, 0))) < 0.7:
+        if abs(za @ (1, 0, 0)) < 0.7:
             xa = (1, 0, 0)
 
         else:
@@ -459,13 +379,13 @@ class Ragdoll():
                 # determine base and current attached body axes
                 baseAxis = rotate3(j.getBody(0).getRotation(),\
                                    j.baseAxis)
-                currAxis = zaxis(j.getBody(1).getRotation())
+                currAxis = traspuesta(j.getBody(1).getRotation())[2]
 
                 # get angular velocity of attached body relative to fixed body
-                relAngVel = sub3(j.getBody(1).getAngularVel(),\
-                                 j.getBody(0).getAngularVel())
+                relAngVel = array(j.getBody(1).getAngularVel()) -\
+                            array(j.getBody(0).getAngularVel())
                 twistAngVel = project3(relAngVel, currAxis)
-                flexAngVel = sub3(relAngVel, twistAngVel)
+                flexAngVel = relAngVel - twistAngVel
 
                 # restrict limbs rotating too far from base axis
                 angle = acosdot3(currAxis, baseAxis)
@@ -473,21 +393,37 @@ class Ragdoll():
                 if angle > j.flexLimit:
                     # add torque to push body back towards base axis
                     j.getBody(1).addTorque(\
-                        mul3(norm3(cross(currAxis, baseAxis)),\
-                        (angle - j.flexLimit) * j.flexForce))
+                        norm3(cross(currAxis, baseAxis)) *\
+                        (angle - j.flexLimit) * j.flexForce)
 
                     # dampen flex to prevent bounceback
                     j.getBody(1).addTorque(\
-                            mul3(flexAngVel, -j.flexForce / 100))
+                            -flexAngVel / 100 * j.flexForce)
 
                 '''determine the base twist up vector for the current attached
                 body by applying the current joint flex to the fixed body's
                 base twist up vector'''
                 baseTwistUp = rotate3(j.getBody(0).getRotation(),\
                                       j.baseTwistUp)
-                base2current = calcRotMatrix(\
-                                norm3(cross(baseAxis, currAxis)),\
-                                acosdot3(baseAxis, currAxis))
+
+                """Returns the row-major 3x3 rotation matrix defining a rotation around axis by
+                angle. Esto conviene q lo haga opengl"""
+                axis, angle = norm3(cross(baseAxis, currAxis)),\
+                              acosdot3(baseAxis, currAxis)
+                cosTheta, sinTheta = cos(angle), sin(angle)
+                t, a0, a1, a2 = 1 - cosTheta, axis[0], axis[1], axis[2]
+                base2current = (t * a0 ** 2 + cosTheta,
+                                t * a0 * a1 - sinTheta * a2,
+                                t * a0 * a2 + sinTheta * a1,
+
+                                t * a0 * a1 + sinTheta * a2,
+                                t * a1 ** 2 + cosTheta,
+                                t * a1 * a2 - sinTheta * a0,
+
+                                t * a0 * a2 - sinTheta * a1,
+                                t * a1 * a2 + sinTheta * a0,
+                                t * a2 ** 2 + cosTheta)
+
                 projBaseTwistUp = rotate3(base2current,\
                                           baseTwistUp)
 
@@ -502,13 +438,13 @@ class Ragdoll():
                 if angle > j.twistLimit:
                     # add torque to rotate body back towards base angle
                     j.getBody(1).addTorque(\
-                            mul3(norm3(\
-                        cross(actualTwistUp, projBaseTwistUp)),
-                        (angle - j.twistLimit) * j.twistForce))
+                            norm3(\
+                        cross(actualTwistUp, projBaseTwistUp)) *\
+                        (angle - j.twistLimit) * j.twistForce)
 
                     # dampen twisting
                     j.getBody(1).addTorque(\
-                        mul3(twistAngVel, -j.twistForce / 100))
+                        -twistAngVel / 100 * j.twistForce)
 
 def createCapsule(world, space, density, length, radius):
     """Creates a capsule body and corresponding geom.
@@ -589,8 +525,16 @@ def draw_body(body):
     """Draw an ODE body."""
     glPushMatrix()
 
-    glMultMatrixf(makeOpenGLMatrix(body.getRotation(),\
-                                   body.getPosition()))
+    """Returns an OpenGL compatible (column-major, 4x4 homogeneous) transformation
+    matrix from ODE compatible (row-major, 3x3) rotation matrix r and position
+    vector p."""
+    r = traspuesta(body.getRotation()).tolist() 
+
+    for e_R in r:
+        e_R += [0]    
+    
+    glMultMatrixf((array(r).reshape(12).tolist() +\
+                   list(body.getPosition()) + [1]))
     
     if body.shape == "capsule":
         cylHalfHeight = body.length / 2
