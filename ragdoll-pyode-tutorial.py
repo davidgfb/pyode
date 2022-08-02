@@ -18,13 +18,75 @@ from OpenGL.GLUT import glutInit, glutInitDisplayMode,\
      glutDisplayFunc, glutIdleFunc, glutMainLoop,\
      glutSolidSphere, glutSwapBuffers, glutSetWindowTitle,\
      glutPostRedisplay
-from ode import Infinity, Body, Mass, GeomCCylinder, FixedJoint,\
+from ode import Body, Mass, GeomCCylinder, FixedJoint,\
      HingeJoint, ParamLoStop, ParamHiStop, UniversalJoint,\
      ParamLoStop2, ParamHiStop2, BallJoint, areConnected,\
      collide, ContactJoint, World, Space, GeomPlane, JointGroup
 
 from numpy import array, cross, zeros
 from numpy.linalg import norm
+
+# axes used to determine constrained joint rotations
+rightAxis, upAxis, bkwdAxis = array((1, 0, 0)), array((0, 1, 0)),\
+                              array((0, 0, 1))
+leftAxis, downAxis, fwdAxis = -rightAxis, -upAxis, -bkwdAxis 
+
+'''rotation directions are named by the third (z-axis) row of the 3x3 matrix,
+because ODE capsules are oriented along the z-axis'''
+rightRot = array(tuple(-bkwdAxis) + tuple(upAxis) + tuple(rightAxis))
+
+UPPER_ARM_LEN, FORE_ARM_LEN, HAND_LEN, FOOT_LEN, HEEL_LEN = 0.3,\
+                                        0.25, 0.13, 0.18, 0.05
+'''HAND_LEN wrist to mid-fingers only
+FOOT_LEN ankles to base of ball of foot only'''
+
+BROW_H, MOUTH_H, NECK_H, SHOULDER_H, CHEST_H, HIP_H, KNEE_H,\
+        ANKLE_H, SHOULDER_W, CHEST_W, LEG_W, PELVIS_W = 1.68,\
+        1.53, 1.5, 1.37, 1.35, 0.86, 0.48, 0.08, 0.41, 0.36,\
+        0.28, 0.25
+'''CHEST_W actually wider, but we want narrower than shoulders (esp. with large radius)
+LEG_W between middles of upper legs
+PELVIS_W actually wider, but we want smaller than hip width'''
+
+j = array((-1, 1, 1))
+L_SHOULDER_POS = array((SHOULDER_W / 2, SHOULDER_H, 0))
+R_SHOULDER_POS = L_SHOULDER_POS * j
+
+k = UPPER_ARM_LEN * rightAxis
+R_ELBOW_POS = R_SHOULDER_POS - k
+L_ELBOW_POS = L_SHOULDER_POS + k
+
+k = FORE_ARM_LEN * rightAxis
+R_WRIST_POS = R_ELBOW_POS - k
+L_WRIST_POS = L_ELBOW_POS + k
+
+k = HAND_LEN * rightAxis
+R_FINGERS_POS = R_WRIST_POS - k
+L_FINGERS_POS = L_WRIST_POS + k
+
+L_HIP_POS = array((LEG_W / 2, HIP_H, 0))
+R_HIP_POS = L_HIP_POS * j
+
+L_KNEE_POS = array((LEG_W / 2, KNEE_H, 0))
+R_KNEE_POS = L_KNEE_POS * j
+
+L_ANKLE_POS = array((LEG_W / 2, ANKLE_H, 0))
+R_ANKLE_POS = L_ANKLE_POS * j
+
+k = HEEL_LEN * bkwdAxis
+R_HEEL_POS = R_ANKLE_POS - k
+L_HEEL_POS = L_ANKLE_POS - k
+
+k = FOOT_LEN * bkwdAxis
+R_TOES_POS = R_ANKLE_POS + k
+L_TOES_POS = L_ANKLE_POS + k
+
+cuerpos, nCuerpo = {}, 0
+
+# polygon resolution for capsule bodies
+CAPSULE_SLICES, CAPSULE_STACKS = 16, 12
+
+t = 0
 
 def a_Array(a, b):
     return (array(a), array(b))
@@ -75,67 +137,6 @@ def getBodyRelVec(b, v):
     body b."""
     return rotate3(traspuesta(b.getRotation()).reshape(9), v)
 
-'''rotation directions are named by the third (z-axis) row of the 3x3 matrix,
-because ODE capsules are oriented along the z-axis'''
-rightRot = array((0, 0, -1, 0, 1, 0, 1, 0, 0))
-leftRot = array((0, 0, 1, 0, 1, 0, -1, 0, 0))
-upRot = array((1, 0, 0, 0, 0, -1, 0, 1, 0))
-downRot = array((1, 0, 0, 0, 0, -1, 0, 1, 0))
-bkwdRot = array((1, 0, 0, 0, 1, 0, 0, 0, 1))
-
-# axes used to determine constrained joint rotations
-rightAxis, upAxis, bkwdAxis = array((1, 0, 0)), array((0, 1, 0)),\
-                              array((0, 0, 1))
-leftAxis, downAxis, fwdAxis = -rightAxis, -upAxis, -bkwdAxis 
-
-UPPER_ARM_LEN, FORE_ARM_LEN, HAND_LEN, FOOT_LEN, HEEL_LEN = 0.3,\
-                                        0.25, 0.13, 0.18, 0.05
-'''HAND_LEN wrist to mid-fingers only
-FOOT_LEN ankles to base of ball of foot only'''
-
-BROW_H, MOUTH_H, NECK_H, SHOULDER_H, CHEST_H, HIP_H, KNEE_H,\
-        ANKLE_H, SHOULDER_W, CHEST_W, LEG_W, PELVIS_W = 1.68,\
-        1.53, 1.5, 1.37, 1.35, 0.86, 0.48, 0.08, 0.41, 0.36,\
-        0.28, 0.25
-'''CHEST_W actually wider, but we want narrower than shoulders (esp. with large radius)
-LEG_W between middles of upper legs
-PELVIS_W actually wider, but we want smaller than hip width'''
-
-j = array((-1, 1, 1))
-L_SHOULDER_POS = array((SHOULDER_W / 2, SHOULDER_H, 0))
-R_SHOULDER_POS = L_SHOULDER_POS * j
-
-k = UPPER_ARM_LEN * rightAxis
-R_ELBOW_POS = R_SHOULDER_POS - k
-L_ELBOW_POS = L_SHOULDER_POS + k
-
-k = FORE_ARM_LEN * rightAxis
-R_WRIST_POS = R_ELBOW_POS - k
-L_WRIST_POS = L_ELBOW_POS + k
-
-k = HAND_LEN * rightAxis
-R_FINGERS_POS = R_WRIST_POS - k
-L_FINGERS_POS = L_WRIST_POS + k
-
-L_HIP_POS = array((LEG_W / 2, HIP_H, 0))
-R_HIP_POS = L_HIP_POS * j
-
-L_KNEE_POS = array((LEG_W / 2, KNEE_H, 0))
-R_KNEE_POS = L_KNEE_POS * j
-
-L_ANKLE_POS = array((LEG_W / 2, ANKLE_H, 0))
-R_ANKLE_POS = L_ANKLE_POS * j
-
-k = HEEL_LEN * bkwdAxis
-R_HEEL_POS = R_ANKLE_POS - k
-L_HEEL_POS = L_ANKLE_POS - k
-
-k = FOOT_LEN * bkwdAxis
-R_TOES_POS = R_ANKLE_POS + k
-L_TOES_POS = L_ANKLE_POS + k
-
-cuerpos, nCuerpo = {}, 0
-
 class Ragdoll():
     def __init__(self, world, space, density, offset = zeros(3)):
         """Creates a ragdoll of standard size at the given offset."""
@@ -152,25 +153,25 @@ class Ragdoll():
         k = (CHEST_W / 2, CHEST_H, 0)
         
         self.chest = self.addBody(k * j, k, 0.13) #0
-        self.belly = self.addBody((0, CHEST_H - 0.1, 0),
-                                  (0, HIP_H + 0.1, 0), 0.125) #1
+        self.belly = self.addBody((CHEST_H - 0.1) * upAxis,
+                                  (HIP_H + 0.1) * upAxis, 0.125) #1
         self.midSpine = self.addFixedJoint(self.chest, self.belly)
         self.pelvis = self.addBody((-PELVIS_W / 2, HIP_H, 0),
                                (PELVIS_W / 2, HIP_H, 0), 0.125) #2
-        self.lowSpine = self.addFixedJoint(self.belly,\
-                                           self.pelvis)
+        self.lowSpine = self.addFixedJoint(self.belly, self.pelvis)
 
-        self.head = self.addBody((0, BROW_H, 0), (0, MOUTH_H, 0),\
-                                 0.11) #3
+        self.head = self.addBody(BROW_H * upAxis, MOUTH_H * upAxis, 0.11) #3
 
         k = pi / 4
         self.neck = self.addBallJoint(self.chest, self.head,\
-            (0, NECK_H, 0), -upAxis, bkwdAxis, k, k, 80, 40)
+            NECK_H * upAxis, -upAxis, bkwdAxis, k, k, 80, 40)
 
         self.rightUpperLeg = self.addBody(R_HIP_POS, R_KNEE_POS,\
                                           0.11) #4
 
-        k, l, m, n = -pi / 10, -0.15 * pi, 0.75 * pi, 0.3 * pi
+        k, l, m, n, o, p, q, r, s = -pi / 10, -0.15 * pi, 0.75 * pi, 0.3 * pi,\
+                                 0.05 * pi, pi / 2, pi / 4, 0.6 * pi, 0.2 * pi
+        
         self.rightHip = self.addUniversalJoint(self.pelvis,\
                                         self.rightUpperLeg,\
                                             R_HIP_POS, bkwdAxis,\
@@ -186,49 +187,49 @@ class Ragdoll():
         self.rightLowerLeg = self.addBody(R_KNEE_POS,\
                                           R_ANKLE_POS, 0.09) #6
         self.rightKnee = self.addHingeJoint(self.rightUpperLeg,
-            self.rightLowerLeg, R_KNEE_POS, leftAxis, 0.0, pi * 0.75)
+            self.rightLowerLeg, R_KNEE_POS, leftAxis, 0, m)
         self.leftLowerLeg = self.addBody(L_KNEE_POS, L_ANKLE_POS,\
                                          0.09) #7
         self.leftKnee = self.addHingeJoint(self.leftUpperLeg,
-            self.leftLowerLeg, L_KNEE_POS, leftAxis, 0.0, pi * 0.75)
+            self.leftLowerLeg, L_KNEE_POS, leftAxis, 0, m)
 
         self.rightFoot = self.addBody(R_HEEL_POS, R_TOES_POS,\
                                       0.09) #8
         self.rightAnkle = self.addHingeJoint(self.rightLowerLeg,
-            self.rightFoot, R_ANKLE_POS, rightAxis, -0.1 * pi, 0.05 * pi)
+            self.rightFoot, R_ANKLE_POS, rightAxis, k, o)
         self.leftFoot = self.addBody(L_HEEL_POS, L_TOES_POS,\
                                      0.09) #9
         self.leftAnkle = self.addHingeJoint(self.leftLowerLeg,
-            self.leftFoot, L_ANKLE_POS, rightAxis, -0.1 * pi, 0.05 * pi)
+            self.leftFoot, L_ANKLE_POS, rightAxis, k, o)
 
         self.rightUpperArm = self.addBody(R_SHOULDER_POS,\
                                           R_ELBOW_POS, 0.08) #10
         self.rightShoulder = self.addBallJoint(self.chest, self.rightUpperArm,
-            R_SHOULDER_POS, norm3((-1.0, -1.0, 4.0)), (0.0, 0.0, 1.0), pi * 0.5,
-            pi * 0.25, 150.0, 100.0)
+            R_SHOULDER_POS, norm3((-1, -1, 4)), bkwdAxis, p,
+            q, 150, 100)
         self.leftUpperArm = self.addBody(L_SHOULDER_POS,\
                                          L_ELBOW_POS, 0.08) #11
         self.leftShoulder = self.addBallJoint(self.chest, self.leftUpperArm,
-            L_SHOULDER_POS, norm3((1.0, -1.0, 4.0)), (0.0, 0.0, 1.0), pi * 0.5,
-            pi * 0.25, 150.0, 100.0)
+            L_SHOULDER_POS, norm3((1, -1, 4)), bkwdAxis, p,
+            q, 150, 100)
 
         self.rightForeArm = self.addBody(R_ELBOW_POS,\
                                          R_WRIST_POS, 0.075) #12
         self.rightElbow = self.addHingeJoint(self.rightUpperArm,
-            self.rightForeArm, R_ELBOW_POS, downAxis, 0.0, 0.6 * pi)
+            self.rightForeArm, R_ELBOW_POS, downAxis, 0, r)
         self.leftForeArm = self.addBody(L_ELBOW_POS, L_WRIST_POS,\
                                         0.075) #13
         self.leftElbow = self.addHingeJoint(self.leftUpperArm,
-            self.leftForeArm, L_ELBOW_POS, upAxis, 0.0, 0.6 * pi)
+            self.leftForeArm, L_ELBOW_POS, upAxis, 0, r)
 
         self.rightHand = self.addBody(R_WRIST_POS, R_FINGERS_POS,\
                                       0.075) #14
         self.rightWrist = self.addHingeJoint(self.rightForeArm,
-            self.rightHand, R_WRIST_POS, fwdAxis, -0.1 * pi, 0.2 * pi)
+            self.rightHand, R_WRIST_POS, fwdAxis, k, s)
         self.leftHand = self.addBody(L_WRIST_POS, L_FINGERS_POS,\
                                      0.075) #15
         self.leftWrist = self.addHingeJoint(self.leftForeArm,
-            self.leftHand, L_WRIST_POS, bkwdAxis, -0.1 * pi, 0.2 * pi)
+            self.leftHand, L_WRIST_POS, bkwdAxis, k, s)
 
     def addBody(self, p1, p2, radius):
         """Adds a capsule body between joint positions p1 and p2 and with given
@@ -262,17 +263,16 @@ class Ragdoll():
         geom.setBody(body)
 
         # define body rotation automatically from body axis
-        za = norm3(p2 - p1) #!
+        za = norm3(p2 - p1) 
 
-        if abs(za @ (1, 0, 0)) < 0.7:
-            xa = (1, 0, 0)
+        if abs(za @ rightAxis) < 0.7:
+            xa = rightAxis
 
         else:
-            xa = (0, 1, 0)
+            xa = upAxis
             
         ya = cross(za, xa)
         xa = norm3(cross(ya, za))
-        ya = cross(za, xa)
 
         rot = array((xa, ya, za)).transpose().reshape(9)
         
@@ -296,9 +296,11 @@ class Ragdoll():
 
         return joint
 
+    inf = float('inf')
+
     def addHingeJoint(self, body1, body2, anchor, axis,\
-                      loStop = -Infinity,\
-                      hiStop = Infinity):
+                      loStop = -inf,\
+                      hiStop = inf):
 
         anchor += array(self.offset)
 
@@ -315,10 +317,10 @@ class Ragdoll():
         return joint
 
     def addUniversalJoint(self, body1, body2, anchor, axis1,\
-                          axis2, loStop1 = -Infinity,\
-                          hiStop1 = Infinity,\
-                          loStop2 = -Infinity,\
-                          hiStop2 = Infinity):
+                          axis2, loStop1 = -inf,\
+                          hiStop1 = inf,\
+                          loStop2 = -inf,\
+                          hiStop2 = inf):
 
         anchor += array(self.offset)
 
@@ -529,9 +531,6 @@ def prepare_GL():
 
     gluLookAt(2,4,3, x,y,z, 0,1,0)
 
-# polygon resolution for capsule bodies
-CAPSULE_SLICES, CAPSULE_STACKS = 16, 12
-
 def draw_body(body):
     """Draw an ODE body."""
     glPushMatrix()
@@ -589,8 +588,6 @@ def onKey(c, x, y):
     except:
         print('e: c no es un string')
 
-
-
 def onDraw():
     """GLUT render callback."""
     global t
@@ -635,8 +632,6 @@ def onIdle():
             contactgroup.empty()
 
         lasttime = time()
-
-t = 0
 
 # initialize GLUT
 glutInit()
@@ -685,7 +680,7 @@ pos = (uniform(-0.3, 0.3), 0.2, uniform(-0.15, 0.2))
 obstacle.setPosition(pos)
 obstacle.setRotation(rightRot)
 bodies.append(obstacle)
-print("obstacle created at %s" % (str(pos)))
+print("obstacle created at", str(pos))
 
 # set GLUT callbacks
 glutKeyboardFunc(onKey)
