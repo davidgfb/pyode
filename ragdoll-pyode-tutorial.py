@@ -23,7 +23,7 @@ from ode import Body, Mass, GeomCCylinder, FixedJoint,\
      ParamLoStop2, ParamHiStop2, BallJoint, areConnected,\
      collide, ContactJoint, World, Space, GeomPlane, JointGroup
 
-from numpy import array, cross, zeros
+from numpy import array, cross, zeros, ones
 from numpy.linalg import norm
 
 # axes used to determine constrained joint rotations
@@ -53,33 +53,29 @@ L_SHOULDER_POS = array((SHOULDER_W / 2, SHOULDER_H, 0))
 R_SHOULDER_POS = L_SHOULDER_POS * j
 
 k = UPPER_ARM_LEN * rightAxis
-R_ELBOW_POS = R_SHOULDER_POS - k
-L_ELBOW_POS = L_SHOULDER_POS + k
+R_ELBOW_POS, L_ELBOW_POS = R_SHOULDER_POS - k, L_SHOULDER_POS + k
 
 k = FORE_ARM_LEN * rightAxis
-R_WRIST_POS = R_ELBOW_POS - k
-L_WRIST_POS = L_ELBOW_POS + k
+R_WRIST_POS, L_WRIST_POS = R_ELBOW_POS - k, L_ELBOW_POS + k
 
 k = HAND_LEN * rightAxis
-R_FINGERS_POS = R_WRIST_POS - k
-L_FINGERS_POS = L_WRIST_POS + k
+R_FINGERS_POS, L_FINGERS_POS = R_WRIST_POS - k, L_WRIST_POS + k
 
-L_HIP_POS = array((LEG_W / 2, HIP_H, 0))
+a = LEG_W / 2
+L_HIP_POS = array((a, HIP_H, 0))
 R_HIP_POS = L_HIP_POS * j
 
-L_KNEE_POS = array((LEG_W / 2, KNEE_H, 0))
+L_KNEE_POS = array((a, KNEE_H, 0))
 R_KNEE_POS = L_KNEE_POS * j
 
-L_ANKLE_POS = array((LEG_W / 2, ANKLE_H, 0))
+L_ANKLE_POS = array((a, ANKLE_H, 0))
 R_ANKLE_POS = L_ANKLE_POS * j
 
 k = HEEL_LEN * bkwdAxis
-R_HEEL_POS = R_ANKLE_POS - k
-L_HEEL_POS = L_ANKLE_POS - k
+R_HEEL_POS, L_HEEL_POS = R_ANKLE_POS - k, L_ANKLE_POS - k
 
 k = FOOT_LEN * bkwdAxis
-R_TOES_POS = R_ANKLE_POS + k
-L_TOES_POS = L_ANKLE_POS + k
+R_TOES_POS, L_TOES_POS = R_ANKLE_POS + k, L_ANKLE_POS + k
 
 cuerpos, nCuerpo = {}, 0
 
@@ -89,7 +85,7 @@ CAPSULE_SLICES, CAPSULE_STACKS = 16, 12
 t = 0
 
 def a_Array(a, b):
-    return (array(a), array(b))
+    return tuple(map(array, (a, b))) 
 
 def norm3(v):
     """Returns the unit length 3-vector parallel to 3-vector v."""
@@ -140,21 +136,21 @@ def getBodyRelVec(b, v):
 class Ragdoll():
     def __init__(self, world, space, density, offset = zeros(3)):
         """Creates a ragdoll of standard size at the given offset."""
-        self.world = world
-        self.space = space
-        self.density = density
-        self.bodies = []
-        self.geoms = []
-        self.joints = []
-        self.totalMass = 0
+        self.world, self.space, self.density, self.bodies, self.geoms, self.joints,\
+                    self.totalMass, self.offset, k = world, space, density, [], [],\
+                    [], 0, offset, (CHEST_W / 2, CHEST_H, 0)
 
-        self.offset = offset
-
-        k = (CHEST_W / 2, CHEST_H, 0)
         
-        self.chest = self.addBody(k * j, k, 0.13) #0
-        self.belly = self.addBody((CHEST_H - 0.1) * upAxis,
-                                  (HIP_H + 0.1) * upAxis, 0.125) #1
+        
+        '''self.chest, self.belly = tuple(map(self.addBody, ((k * j, k, 0.13),\
+                ((CHEST_H - 0.1) * upAxis, (HIP_H + 0.1) * upAxis, 0.125))))'''
+
+
+        self.chest, self.belly = self.addBody(k * j, k, 0.13),\
+         self.addBody((CHEST_H - 0.1) * upAxis,
+                                  (HIP_H + 0.1) * upAxis, 0.125) #0 #1
+
+
         self.midSpine = self.addFixedJoint(self.chest, self.belly)
         self.pelvis = self.addBody((-PELVIS_W / 2, HIP_H, 0),
                                (PELVIS_W / 2, HIP_H, 0), 0.125) #2
@@ -498,38 +494,38 @@ def near_callback(args, geom1, geom2):
             j.attach(geom1.getBody(), geom2.getBody())
 
 def prepare_GL():
-    """Setup basic OpenGL rendering with smooth shading and a single light."""
-    glClearColor(0.8, 0.8, 0.9, 0)
+    """Setup basic OpenGL rendering with smooth shading and a single light.""" 
+    #glClearColor(*(i for i in (0.8, 0.8, 0.9, 0))) #* arg unpacking
     glClear(16640)
-    glEnable(GL_DEPTH_TEST)
-    glEnable(GL_LIGHTING)
+
+    tuple(map(glEnable, (GL_DEPTH_TEST, GL_LIGHTING)))
+    
     glShadeModel(GL_SMOOTH)
 
     glMatrixMode(GL_PROJECTION)
+
     glLoadIdentity()
-    gluPerspective (45, width / height, 0.2, 20)
+
+    gluPerspective(45, width / height, 0.2, 20)
 
     glViewport(0, 0, width, height)
 
     glMatrixMode(GL_MODELVIEW)
-    glLoadIdentity()
 
-    glLightfv(GL_LIGHT0, GL_POSITION, (0, 0, 1, 0))
-    glLightfv(GL_LIGHT0, GL_DIFFUSE, (1, 1, 1, 1))
-    glLightfv(GL_LIGHT0, GL_SPECULAR, (1, 1, 1, 1))
-    glEnable(GL_LIGHT0)
+    glLoadIdentity()   
 
-    glEnable(GL_COLOR_MATERIAL)
-    glColor3f(0.8, 0.8, 0.8)
+    tuple(map(glEnable, (GL_LIGHT0, GL_COLOR_MATERIAL)))
 
-    x,y,z = cuerpos[2].getPosition()
+    glColor3f(*(i for i in 0.8 * ones(3)))
+
+    x, y, z = cuerpos[2].getPosition()
     '''{0:chest, 1:belly, 2:pelvis, 3:head, 4:rightUpperLeg,\
         5:leftUpperLeg, 6:rightLowerLeg, 7:leftLowerLeg,\
         8:rightFoot, 9:leftFoot, 10:rightUpperArm,\
         11:leftUpperArm, 12:rightForeArm, 13:leftForeArm,\
         14:rightHand, 15:leftHand}'''
 
-    gluLookAt(2,4,3, x,y,z, 0,1,0)
+    gluLookAt(*(i for i in (2, 4, 3) + (x, y, z) + tuple(upAxis)))
 
 def draw_body(body):
     """Draw an ODE body."""
@@ -541,10 +537,10 @@ def draw_body(body):
     r = traspuesta(body.getRotation()).tolist() 
 
     for e_R in r:
-        e_R += [0]    
+        e_R += (0,)    
     
-    glMultMatrixf((array(r).reshape(12).tolist() +\
-                   list(body.getPosition()) + [1]))
+    glMultMatrixf((tuple(array(r).reshape(12).tolist()) +\
+                   tuple(body.getPosition()) + (1,)))
     
     if body.shape == "capsule":
         cylHalfHeight = body.length / 2
@@ -645,7 +641,7 @@ glutCreateWindow("")
 
 # create an ODE world object
 world = World()
-world.setGravity((0, -10, 0))
+world.setGravity(-10 * upAxis)
 world.setERP(0.1)
 world.setCFM(1e-4)
 
@@ -653,7 +649,7 @@ world.setCFM(1e-4)
 space = Space()
 
 # create a plane geom to simulate a floor
-floor = GeomPlane(space, (0, 1, 0), 0)
+floor = GeomPlane(space, upAxis, 0)
 
 '''create a list to store any ODE bodies which are not part of the ragdoll (this
 is needed to avoid Python garbage collecting these bodies)'''
@@ -669,7 +665,7 @@ fps, stepsPerFrame, SloMo, Paused, lasttime, numiter = 100, 2, 1,\
 dt = 1 / fps
  
 # create the ragdoll
-ragdoll = Ragdoll(world, space, 500, (0, 0.9, 0))
+ragdoll = Ragdoll(world, space, 500, 0.9 * upAxis)
 print("total mass is %.1f kg (%.1f lbs)" % (ragdoll.totalMass,\
     ragdoll.totalMass * 2.2))
 
