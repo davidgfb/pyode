@@ -338,10 +338,9 @@ class Ragdoll():
         joint.baseTwistUp2 = getBodyRelVec(body2, baseTwistUp)
 
         # store joint rotation limits and resistive force factors
-        joint.flexLimit, joint.twistLimit, joint.flexForce, joint.twistForce =\
-                         flexLimit, twistLimit, flexForce, twistForce
-
-        joint.style = "ball"
+        joint.flexLimit, joint.twistLimit, joint.flexForce, joint.twistForce,\
+                         joint.style =\
+                         flexLimit, twistLimit, flexForce, twistForce, "ball"
         self.joints.append(joint)
 
         return joint
@@ -434,13 +433,9 @@ def createCapsule(world, space, density, length, radius):
     M.setCapsule(density, 3, radius, length)
     body.setMass(M)
 
-    # set parameters for drawing the body
-    body.shape = "capsule"
-    body.length = length
-    body.radius = radius
-
-    # create a capsule geom for collision detection
-    geom = GeomCCylinder(space, radius, length)
+    # set parameters for drawing the body # create a capsule geom for collision detection
+    body.shape, body.length, body.radius, geom = "capsule", length, radius,\
+                                                 GeomCCylinder(space, radius, length)
     geom.setBody(body)
 
     return body, geom
@@ -618,42 +613,37 @@ world.setCFM(1e-4)
 space = Space()
 
 # create a plane geom to simulate a floor
-floor = GeomPlane(space, upAxis, 0)
-
 '''create a list to store any ODE bodies which are not part of the ragdoll (this
 is needed to avoid Python garbage collecting these bodies)'''
-bodies = []
-
 '''create a joint group for the contact joints generated during collisions
 between two bodies collide'''
-contactgroup = JointGroup()
-
 # set the initial simulation loop parameters
-fps, stepsPerFrame, SloMo, Paused, lasttime, numiter = 100, 2, 1,\
-                                                False, time(), 0
-dt = 1 / fps
- 
+floor, bodies, contactgroup, fps, stepsPerFrame, SloMo, Paused, lasttime, numiter =\
+       GeomPlane(space, upAxis, 0), [], JointGroup(), 100, 2, 1, False, time(), 0
 # create the ragdoll
-ragdoll = Ragdoll(world, space, 500, 0.9 * upAxis)
-print("total mass is %.1f kg (%.1f lbs)" % (ragdoll.totalMass,\
-    ragdoll.totalMass * 2.2))
-
+dt, ragdoll, pos = 1 / fps, Ragdoll(world, space, 500, 0.9 * upAxis),\
+                   (uniform(-0.3, 0.3), 0.2, uniform(-0.15, 0.2))
+ 
 # create an obstacle
 obstacle, obsgeom = createCapsule(world, space, 1000, 0.05, 0.15)
-pos = (uniform(-0.3, 0.3), 0.2, uniform(-0.15, 0.2))
+  
 #pos = (0.27396178783269359, 0.20000000000000001, 0.17531818795388002)
 obstacle.setPosition(pos)
 obstacle.setRotation(rightRot)
 bodies.append(obstacle)
-print("obstacle created at", str(pos))
 
 # set GLUT callbacks
 glutKeyboardFunc(onKey)
 glutDisplayFunc(onDraw)
 glutIdleFunc(onIdle)
 
+print("obstacle created at", str(pos), "\ntotal mass is %.1f kg (%.1f lbs)" %\
+      (ragdoll.totalMass, ragdoll.totalMass * 2.2))
+
 # enter the GLUT event loop
 glutMainLoop()
+
+
 
 
 
