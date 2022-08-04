@@ -140,92 +140,81 @@ class Ragdoll():
                     self.totalMass, self.offset, k = world, space, density, [], [],\
                     [], 0, offset, (CHEST_W / 2, CHEST_H, 0)
 
-        
-        
-        '''self.chest, self.belly = tuple(map(self.addBody, ((k * j, k, 0.13),\
-                ((CHEST_H - 0.1) * upAxis, (HIP_H + 0.1) * upAxis, 0.125))))'''
+        self.chest, self.belly, self.pelvis, self.head, self.rightUpperLeg,\
+                    self.leftUpperLeg, self.rightLowerLeg, self.leftLowerLeg,\
+                    self.rightFoot, self.leftFoot, self.rightUpperArm,\
+                    self.leftUpperArm, self.rightForeArm, self.leftForeArm,\
+                    self.rightHand, self.leftHand =\
+                    self.addBody(k * j, k, 0.13),\
+                    self.addBody((CHEST_H - 0.1) * upAxis,
+                                          (HIP_H + 0.1) * upAxis, 0.125),\
+                    self.addBody((-PELVIS_W / 2, HIP_H, 0),
+                                       (PELVIS_W / 2, HIP_H, 0), 0.125),\
+                    self.addBody(BROW_H * upAxis, MOUTH_H * upAxis, 0.11),\
+                    self.addBody(R_HIP_POS, R_KNEE_POS, 0.11),\
+                    self.addBody(L_HIP_POS, L_KNEE_POS, 0.11),\
+                                         self.addBody(R_KNEE_POS,\
+                                          R_ANKLE_POS, 0.09),\
+                                          self.addBody(L_KNEE_POS, L_ANKLE_POS,\
+                                         0.09),\
+                                         self.addBody(R_HEEL_POS, R_TOES_POS,\
+                                      0.09), self.addBody(L_HEEL_POS, L_TOES_POS,\
+                                     0.09), self.addBody(R_SHOULDER_POS,\
+                                          R_ELBOW_POS, 0.08),\
+                                          self.addBody(L_SHOULDER_POS,\
+                                         L_ELBOW_POS, 0.08),\
+                                         self.addBody(R_ELBOW_POS,\
+                                         R_WRIST_POS, 0.075),\
+                                         self.addBody(L_ELBOW_POS, L_WRIST_POS,\
+                                        0.075),\
+                                        self.addBody(R_WRIST_POS, R_FINGERS_POS,\
+                                      0.075),\
+                                      self.addBody(L_WRIST_POS, L_FINGERS_POS,\
+                                     0.075) #no mape #0...15
 
-
-        self.chest, self.belly = self.addBody(k * j, k, 0.13),\
-         self.addBody((CHEST_H - 0.1) * upAxis,
-                                  (HIP_H + 0.1) * upAxis, 0.125) #0 #1
-
-
-        self.midSpine = self.addFixedJoint(self.chest, self.belly)
-        self.pelvis = self.addBody((-PELVIS_W / 2, HIP_H, 0),
-                               (PELVIS_W / 2, HIP_H, 0), 0.125) #2
-        self.lowSpine = self.addFixedJoint(self.belly, self.pelvis)
-
-        self.head = self.addBody(BROW_H * upAxis, MOUTH_H * upAxis, 0.11) #3
-
-        k = pi / 4
-        self.neck = self.addBallJoint(self.chest, self.head,\
-            NECK_H * upAxis, -upAxis, bkwdAxis, k, k, 80, 40)
-
-        self.rightUpperLeg = self.addBody(R_HIP_POS, R_KNEE_POS,\
-                                          0.11) #4
+        self.midSpine, self.lowSpine = self.addFixedJoint(self.chest, self.belly),\
+                                       self.addFixedJoint(self.belly, self.pelvis) #no mape
 
         k, l, m, n, o, p, q, r, s = -pi / 10, -0.15 * pi, 0.75 * pi, 0.3 * pi,\
                                  0.05 * pi, pi / 2, pi / 4, 0.6 * pi, 0.2 * pi
-        
-        self.rightHip = self.addUniversalJoint(self.pelvis,\
+
+        self.neck = self.addBallJoint(self.chest, self.head,\
+            NECK_H * upAxis, -upAxis, bkwdAxis, q, q, 80, 40)
+       
+        self.rightHip, self.leftHip = self.addUniversalJoint(self.pelvis,\
                                         self.rightUpperLeg,\
                                             R_HIP_POS, bkwdAxis,\
-                                rightAxis, k, n,\
-                                        l, m)
-        self.leftUpperLeg = self.addBody(L_HIP_POS, L_KNEE_POS,\
-                                         0.11) #5
-        self.leftHip = self.addUniversalJoint(self.pelvis,\
+                                rightAxis, k, n, l, m),\
+                                self.addUniversalJoint(self.pelvis,\
                                 self.leftUpperLeg, L_HIP_POS,\
-                                fwdAxis, rightAxis, k, n,\
-                                              l, m)
+                                fwdAxis, rightAxis, k, n, l, m) #no mape
+      
+        self.rightKnee, self.leftKnee, self.rightAnkle, self.leftAnkle =\
+                        self.addHingeJoint(self.rightUpperLeg,
+            self.rightLowerLeg, R_KNEE_POS, leftAxis, 0, m),\
+            self.addHingeJoint(self.leftUpperLeg,
+            self.leftLowerLeg, L_KNEE_POS, leftAxis, 0, m),\
+            self.addHingeJoint(self.rightLowerLeg,
+            self.rightFoot, R_ANKLE_POS, rightAxis, k, o),\
+            self.addHingeJoint(self.leftLowerLeg,
+            self.leftFoot, L_ANKLE_POS, rightAxis, k, o) #no mape
 
-        self.rightLowerLeg = self.addBody(R_KNEE_POS,\
-                                          R_ANKLE_POS, 0.09) #6
-        self.rightKnee = self.addHingeJoint(self.rightUpperLeg,
-            self.rightLowerLeg, R_KNEE_POS, leftAxis, 0, m)
-        self.leftLowerLeg = self.addBody(L_KNEE_POS, L_ANKLE_POS,\
-                                         0.09) #7
-        self.leftKnee = self.addHingeJoint(self.leftUpperLeg,
-            self.leftLowerLeg, L_KNEE_POS, leftAxis, 0, m)
-
-        self.rightFoot = self.addBody(R_HEEL_POS, R_TOES_POS,\
-                                      0.09) #8
-        self.rightAnkle = self.addHingeJoint(self.rightLowerLeg,
-            self.rightFoot, R_ANKLE_POS, rightAxis, k, o)
-        self.leftFoot = self.addBody(L_HEEL_POS, L_TOES_POS,\
-                                     0.09) #9
-        self.leftAnkle = self.addHingeJoint(self.leftLowerLeg,
-            self.leftFoot, L_ANKLE_POS, rightAxis, k, o)
-
-        self.rightUpperArm = self.addBody(R_SHOULDER_POS,\
-                                          R_ELBOW_POS, 0.08) #10
-        self.rightShoulder = self.addBallJoint(self.chest, self.rightUpperArm,
+        self.rightShoulder, self.leftShoulder =\
+                            self.addBallJoint(self.chest, self.rightUpperArm,
             R_SHOULDER_POS, norm3((-1, -1, 4)), bkwdAxis, p,
-            q, 150, 100)
-        self.leftUpperArm = self.addBody(L_SHOULDER_POS,\
-                                         L_ELBOW_POS, 0.08) #11
-        self.leftShoulder = self.addBallJoint(self.chest, self.leftUpperArm,
+            q, 150, 100), self.addBallJoint(self.chest, self.leftUpperArm,
             L_SHOULDER_POS, norm3((1, -1, 4)), bkwdAxis, p,
-            q, 150, 100)
-
-        self.rightForeArm = self.addBody(R_ELBOW_POS,\
-                                         R_WRIST_POS, 0.075) #12
-        self.rightElbow = self.addHingeJoint(self.rightUpperArm,
-            self.rightForeArm, R_ELBOW_POS, downAxis, 0, r)
-        self.leftForeArm = self.addBody(L_ELBOW_POS, L_WRIST_POS,\
-                                        0.075) #13
-        self.leftElbow = self.addHingeJoint(self.leftUpperArm,
-            self.leftForeArm, L_ELBOW_POS, upAxis, 0, r)
-
-        self.rightHand = self.addBody(R_WRIST_POS, R_FINGERS_POS,\
-                                      0.075) #14
-        self.rightWrist = self.addHingeJoint(self.rightForeArm,
-            self.rightHand, R_WRIST_POS, fwdAxis, k, s)
-        self.leftHand = self.addBody(L_WRIST_POS, L_FINGERS_POS,\
-                                     0.075) #15
-        self.leftWrist = self.addHingeJoint(self.leftForeArm,
-            self.leftHand, L_WRIST_POS, bkwdAxis, k, s)
+            q, 150, 100) #no mape
+                     
+        self.rightElbow, self.leftElbow, self.rightWrist, self.leftWrist =\
+                         self.addHingeJoint(self.rightUpperArm,
+            self.rightForeArm, R_ELBOW_POS, downAxis, 0, r),\
+            self.addHingeJoint(self.leftUpperArm,
+            self.leftForeArm, L_ELBOW_POS, upAxis, 0, r),\
+            self.addHingeJoint(self.rightForeArm,
+            self.rightHand, R_WRIST_POS, fwdAxis, k, s),\
+            self.addHingeJoint(self.leftForeArm,
+            self.leftHand, L_WRIST_POS, bkwdAxis, k, s) #no mape
 
     def addBody(self, p1, p2, radius):
         """Adds a capsule body between joint positions p1 and p2 and with given
@@ -317,7 +306,6 @@ class Ragdoll():
                           hiStop1 = inf,\
                           loStop2 = -inf,\
                           hiStop2 = inf):
-
         anchor += array(self.offset)
 
         joint = UniversalJoint(self.world)
@@ -325,10 +313,11 @@ class Ragdoll():
         joint.setAnchor(anchor)
         joint.setAxis1(axis1)
         joint.setAxis2(axis2)
+        
         joint.setParam(ParamLoStop, loStop1)
         joint.setParam(ParamHiStop, hiStop1)
         joint.setParam(ParamLoStop2, loStop2)
-        joint.setParam(ParamHiStop2, hiStop2)
+        joint.setParam(ParamHiStop2, hiStop2) #no ite
 
         joint.style = "univ"
         self.joints.append(joint)
@@ -339,7 +328,6 @@ class Ragdoll():
                      baseTwistUp, flexLimit = pi,\
                      twistLimit = pi, flexForce = 0,\
                      twistForce = 0):
-
         anchor += array(self.offset)
 
         # create the joint
@@ -351,20 +339,19 @@ class Ragdoll():
         of the primary body (because baseAxis and baseTwistUp may not be
         orthogonal, the nearest vector to baseTwistUp but orthogonal to
         baseAxis is calculated and stored with the joint)'''
-        joint.baseAxis = getBodyRelVec(body1, baseAxis)
-        tempTwistUp = getBodyRelVec(body1, baseTwistUp)
+        joint.baseAxis, tempTwistUp = getBodyRelVec(body1, baseAxis),\
+                                      getBodyRelVec(body1, baseTwistUp) #no ite
+
         baseSide = norm3(cross(tempTwistUp, joint.baseAxis))
-        joint.baseTwistUp = norm3(cross(joint.baseAxis, baseSide))
+        joint.baseTwistUp = norm3(cross(joint.baseAxis, baseSide)) #interdep
 
         '''store the base twist up vector (original version) in the local
         coordinate system of the secondary body'''
         joint.baseTwistUp2 = getBodyRelVec(body2, baseTwistUp)
 
         # store joint rotation limits and resistive force factors
-        joint.flexLimit = flexLimit
-        joint.twistLimit = twistLimit
-        joint.flexForce = flexForce
-        joint.twistForce = twistForce
+        joint.flexLimit, joint.twistLimit, joint.flexForce, joint.twistForce =\
+                         flexLimit, twistLimit, flexForce, twistForce
 
         joint.style = "ball"
         self.joints.append(joint)
@@ -390,13 +377,10 @@ class Ragdoll():
 
                 if angle > j.flexLimit:
                     # add torque to push body back towards base axis
-                    j.getBody(1).addTorque(\
-                        norm3(cross(currAxis, baseAxis)) *\
-                        (angle - j.flexLimit) * j.flexForce)
-
-                    # dampen flex to prevent bounceback
-                    j.getBody(1).addTorque(\
-                            -flexAngVel / 100 * j.flexForce)
+                    tuple(map(j.getBody(1).addTorque,\
+                        ((norm3(cross(currAxis, baseAxis)) *\
+                        (angle - j.flexLimit) * j.flexForce),\
+                        (-flexAngVel / 100 * j.flexForce)))) #dampen flex to prevent bounceback
 
                 '''determine the base twist up vector for the current attached
                 body by applying the current joint flex to the fixed body's
@@ -409,7 +393,8 @@ class Ragdoll():
                 axis, angle = norm3(cross(baseAxis, currAxis)),\
                               acosdot3(baseAxis, currAxis)
                 cosTheta, sinTheta = cos(angle), sin(angle)
-                t, a0, a1, a2 = 1 - cosTheta, axis[0], axis[1], axis[2]
+                t = 1 - cosTheta 
+                a0, a1, a2 = axis
 
                 base2current = (t * a0 ** 2 + cosTheta,
                                 t * a0 * a1 - sinTheta * a2,
@@ -446,14 +431,10 @@ class Ragdoll():
 
                 if angle > j.twistLimit:
                     # add torque to rotate body back towards base angle
-                    j.getBody(1).addTorque(\
-                            norm3(\
-                        cross(actualTwistUp, projBaseTwistUp)) *\
-                        (angle - j.twistLimit) * j.twistForce)
-
-                    # dampen twisting
-                    j.getBody(1).addTorque(\
-                        -twistAngVel / 100 * j.twistForce)
+                    tuple(map(j.getBody(1).addTorque,\
+                        ((norm3(cross(actualTwistUp, projBaseTwistUp)) *\
+                        (angle - j.twistLimit) * j.twistForce),\
+                        (-twistAngVel / 100 * j.twistForce)))) # dampen twisting
 
 def createCapsule(world, space, density, length, radius):
     """Creates a capsule body and corresponding geom.
@@ -490,8 +471,8 @@ def near_callback(args, geom1, geom2):
         for c in contacts:
             c.setBounce(0.2)
             c.setMu(500) # 0-5 = very slippery, 50-500 = normal, 5000 = very sticky
-            j = ContactJoint(world, contactgroup, c)
-            j.attach(geom1.getBody(), geom2.getBody())
+            ContactJoint(world, contactgroup, c).attach(geom1.getBody(),\
+                                                        geom2.getBody()) #uso global?
 
 def prepare_GL():
     """Setup basic OpenGL rendering with smooth shading and a single light.""" 
@@ -545,12 +526,12 @@ def draw_body(body):
     if body.shape == "capsule":
         cylHalfHeight = body.length / 2
         quadric = gluNewQuadric()
-        glTranslatef(0, 0, -cylHalfHeight)
+        glTranslatef(*(i for i in -cylHalfHeight * bkwdAxis))
         glutSolidSphere(body.radius, CAPSULE_SLICES,\
                         CAPSULE_STACKS)
         gluCylinder(quadric, body.radius, body.radius,\
                     body.length, CAPSULE_SLICES, CAPSULE_STACKS)     
-        glTranslatef(0, 0, body.length)
+        glTranslatef(*(i for i in body.length * bkwdAxis))
         glutSolidSphere(body.radius, CAPSULE_SLICES,\
                         CAPSULE_STACKS)
 
@@ -579,7 +560,7 @@ def onKey(c, x, y):
             
         # quit
         elif c == 'q':
-            exit(0)
+            exit()
 
     except:
         print('e: c no es un string')
