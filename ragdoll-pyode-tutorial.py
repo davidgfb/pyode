@@ -77,12 +77,8 @@ R_HEEL_POS, L_HEEL_POS = R_ANKLE_POS - k, L_ANKLE_POS - k
 k = FOOT_LEN * bkwdAxis
 R_TOES_POS, L_TOES_POS = R_ANKLE_POS + k, L_ANKLE_POS + k
 
-cuerpos, nCuerpo = {}, 0
-
 # polygon resolution for capsule bodies
-CAPSULE_SLICES, CAPSULE_STACKS = 16, 12
-
-t = 0
+cuerpos, nCuerpo, CAPSULE_SLICES, CAPSULE_STACKS, t = {}, 0, 16, 12, 0
 
 def a_Array(a, b):
     return tuple(map(array, (a, b))) 
@@ -228,8 +224,7 @@ class Ragdoll():
 
         # cylinder length not including endcaps, make capsules overlap by half
         #   radius at joints
-        cyllen = norm(p1 - p2) - radius
-        body = Body(self.world)
+        cyllen, body = norm(p1 - p2) - radius, Body(self.world)
 
         cuerpos[nCuerpo] = body
         nCuerpo += 1
@@ -239,16 +234,13 @@ class Ragdoll():
         body.setMass(m)
 
         # set parameters for drawing the body
-        body.shape = "capsule"
-        body.length = cyllen
-        body.radius = radius
-
         # create a capsule geom for collision detection
-        geom = GeomCCylinder(self.space, radius, cyllen)
-        geom.setBody(body)
-
         # define body rotation automatically from body axis
-        za = norm3(p2 - p1) 
+        body.shape, body.length, body.radius, geom, za = "capsule", cyllen, radius,\
+                                        GeomCCylinder(self.space, radius, cyllen),\
+                                        norm3(p2 - p1) 
+
+        geom.setBody(body)
 
         if abs(za @ rightAxis) < 0.7:
             xa = rightAxis
@@ -256,10 +248,8 @@ class Ragdoll():
         else:
             xa = upAxis
             
-        ya = cross(za, xa)
-        xa = norm3(cross(ya, za))
-
-        rot = array((xa, ya, za)).transpose().reshape(9)
+        ya = cross(za, xa) 
+        rot = array((norm3(cross(ya, za)), ya, za)).transpose().reshape(9)
         
         body.setPosition((p1 + p2) / 2)
         body.setRotation(rot)
@@ -284,8 +274,7 @@ class Ragdoll():
     inf = float('inf')
 
     def addHingeJoint(self, body1, body2, anchor, axis,\
-                      loStop = -inf,\
-                      hiStop = inf):
+                      loStop = -inf, hiStop = inf):
 
         anchor += array(self.offset)
 
@@ -293,8 +282,9 @@ class Ragdoll():
         joint.attach(body1, body2)
         joint.setAnchor(anchor)
         joint.setAxis(axis)
+        
         joint.setParam(ParamLoStop, loStop)
-        joint.setParam(ParamHiStop, hiStop)
+        joint.setParam(ParamHiStop, hiStop) #no mape
 
         joint.style = "hinge"
         self.joints.append(joint)
@@ -302,10 +292,8 @@ class Ragdoll():
         return joint
 
     def addUniversalJoint(self, body1, body2, anchor, axis1,\
-                          axis2, loStop1 = -inf,\
-                          hiStop1 = inf,\
-                          loStop2 = -inf,\
-                          hiStop2 = inf):
+                          axis2, loStop1 = -inf, hiStop1 = inf,\
+                          loStop2 = -inf, hiStop2 = inf):
         anchor += array(self.offset)
 
         joint = UniversalJoint(self.world)
