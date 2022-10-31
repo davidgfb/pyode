@@ -141,32 +141,32 @@ class Ragdoll():
                     self.rightFoot, self.leftFoot, self.rightUpperArm,\
                     self.leftUpperArm, self.rightForeArm, self.leftForeArm,\
                     self.rightHand, self.leftHand =\
-                    self.addBody(k * j, k, 0.13),\
+                    self.addBody(k * j, k, 0.13, 'chest'),\
                     self.addBody((CHEST_H - 0.1) * upAxis,
-                                          (HIP_H + 0.1) * upAxis, 0.125),\
+                                          (HIP_H + 0.1) * upAxis, 0.125, 'belly'),\
                     self.addBody((-PELVIS_W / 2, HIP_H, 0),
-                                       (PELVIS_W / 2, HIP_H, 0), 0.125),\
-                    self.addBody(BROW_H * upAxis, MOUTH_H * upAxis, 0.11),\
-                    self.addBody(R_HIP_POS, R_KNEE_POS, 0.11),\
-                    self.addBody(L_HIP_POS, L_KNEE_POS, 0.11),\
+                                       (PELVIS_W / 2, HIP_H, 0), 0.125, 'pelvis'),\
+                    self.addBody(BROW_H * upAxis, MOUTH_H * upAxis, 0.11, 'head'),\
+                    self.addBody(R_HIP_POS, R_KNEE_POS, 0.11, 'rightUpperLeg'),\
+                    self.addBody(L_HIP_POS, L_KNEE_POS, 0.11, 'leftUpperLeg'),\
                                          self.addBody(R_KNEE_POS,\
-                                          R_ANKLE_POS, 0.09),\
+                                          R_ANKLE_POS, 0.09, 'rightLowerLeg'),\
                                           self.addBody(L_KNEE_POS, L_ANKLE_POS,\
-                                         0.09),\
+                                         0.09, 'leftLowerLeg'),\
                                          self.addBody(R_HEEL_POS, R_TOES_POS,\
-                                      0.09), self.addBody(L_HEEL_POS, L_TOES_POS,\
-                                     0.09), self.addBody(R_SHOULDER_POS,\
-                                          R_ELBOW_POS, 0.08),\
+                                      0.09, 'rightFoot'), self.addBody(L_HEEL_POS, L_TOES_POS,\
+                                     0.09, 'leftFoot'), self.addBody(R_SHOULDER_POS,\
+                                          R_ELBOW_POS, 0.08, 'rightUpperArm'),\
                                           self.addBody(L_SHOULDER_POS,\
-                                         L_ELBOW_POS, 0.08),\
+                                         L_ELBOW_POS, 0.08, 'leftUpperArm'),\
                                          self.addBody(R_ELBOW_POS,\
-                                         R_WRIST_POS, 0.075),\
+                                         R_WRIST_POS, 0.075, 'rightForeArm'),\
                                          self.addBody(L_ELBOW_POS, L_WRIST_POS,\
-                                        0.075),\
+                                        0.075, 'leftForeArm'),\
                                         self.addBody(R_WRIST_POS, R_FINGERS_POS,\
-                                      0.075),\
+                                      0.075, 'rightHand'),\
                                       self.addBody(L_WRIST_POS, L_FINGERS_POS,\
-                                     0.075) #no mape #0...15
+                                     0.075, 'leftHand') #no mape #0...15
 
         self.midSpine, self.lowSpine = self.addFixedJoint(self.chest, self.belly),\
                                        self.addFixedJoint(self.belly, self.pelvis) #no mape
@@ -212,12 +212,12 @@ class Ragdoll():
             self.addHingeJoint(self.leftForeArm,
             self.leftHand, L_WRIST_POS, bkwdAxis, k, s) #no mape
 
-    def addBody(self, p1, p2, radius):
+    def addBody(self, p1, p2, radius, name):
         """Adds a capsule body between joint positions p1 and p2 and with given
         radius to the ragdoll."""
         global cuerpos, nCuerpo
         
-        p1,p2 = a_Array(p1,p2)
+        p1, p2 = a_Array(p1,p2)
         
         p1 += self.offset
         p2 += self.offset
@@ -226,8 +226,8 @@ class Ragdoll():
         #   radius at joints
         cyllen, body = norm(p1 - p2) - radius, Body(self.world)
 
-        cuerpos[nCuerpo] = body
-        nCuerpo += 1
+        cuerpos[name] = body #nCuerpo
+        #nCuerpo += 1
         
         m = Mass()
         m.setCapsule(self.density, 3, radius, cyllen)
@@ -275,17 +275,14 @@ class Ragdoll():
 
     def addHingeJoint(self, body1, body2, anchor, axis,\
                       loStop = -inf, hiStop = inf):
-
         anchor += array(self.offset)
-
         joint = HingeJoint(self.world)
         joint.attach(body1, body2)
         joint.setAnchor(anchor)
         joint.setAxis(axis)
+        tuple(joint.setParam(a, b) for a, b in\
+              ((ParamLoStop, loStop), (ParamHiStop, hiStop)))
         
-        joint.setParam(ParamLoStop, loStop)
-        joint.setParam(ParamHiStop, hiStop) #no mape
-
         joint.style = "hinge"
         self.joints.append(joint)
 
@@ -301,12 +298,9 @@ class Ragdoll():
         joint.setAnchor(anchor)
         joint.setAxis1(axis1)
         joint.setAxis2(axis2)
-        
-        joint.setParam(ParamLoStop, loStop1)
-        joint.setParam(ParamHiStop, hiStop1)
-        joint.setParam(ParamLoStop2, loStop2)
-        joint.setParam(ParamHiStop2, hiStop2) #no ite
-
+        tuple(joint.setParam(a, b) for a, b in\
+              ((ParamLoStop, loStop1), (ParamHiStop, hiStop1),\
+               (ParamLoStop2, loStop2), (ParamHiStop2, hiStop2)))
         joint.style = "univ"
         self.joints.append(joint)
 
@@ -338,9 +332,10 @@ class Ragdoll():
         joint.baseTwistUp2 = getBodyRelVec(body2, baseTwistUp)
 
         # store joint rotation limits and resistive force factors
-        joint.flexLimit, joint.twistLimit, joint.flexForce, joint.twistForce,\
-                         joint.style =\
-                         flexLimit, twistLimit, flexForce, twistForce, "ball"
+        joint.flexLimit, joint.twistLimit, joint.flexForce,\
+                         joint.twistForce, joint.style =\
+                         flexLimit, twistLimit, flexForce,\
+                         twistForce, "ball"
         self.joints.append(joint)
 
         return joint
@@ -382,7 +377,6 @@ class Ragdoll():
                 cosTheta, sinTheta = cos(angle), sin(angle)
                 t = 1 - cosTheta 
                 a0, a1, a2 = axis
-
                 base2current = (t * a0 ** 2 + cosTheta,
                                 t * a0 * a1 - sinTheta * a2,
                                 t * a0 * a2 + sinTheta * a1,
@@ -461,33 +455,18 @@ def prepare_GL():
     """Setup basic OpenGL rendering with smooth shading and a single light.""" 
     #glClearColor(*(i for i in (0.8, 0.8, 0.9, 0))) #* arg unpacking
     glClear(16640)
-
-    tuple(map(glEnable, (GL_DEPTH_TEST, GL_LIGHTING)))
-    
+    tuple(map(glEnable, (GL_DEPTH_TEST, GL_LIGHTING)))   
     glShadeModel(GL_SMOOTH)
-
     glMatrixMode(GL_PROJECTION)
-
     glLoadIdentity()
-
     gluPerspective(45, width / height, 0.2, 20)
-
     glViewport(0, 0, width, height)
-
     glMatrixMode(GL_MODELVIEW)
-
     glLoadIdentity()   
-
     tuple(map(glEnable, (GL_LIGHT0, GL_COLOR_MATERIAL)))
-
     glColor3f(*(i for i in 0.8 * ones(3)))
 
-    x, y, z = cuerpos[2].getPosition()
-    '''{0:chest, 1:belly, 2:pelvis, 3:head, 4:rightUpperLeg,\
-        5:leftUpperLeg, 6:rightLowerLeg, 7:leftLowerLeg,\
-        8:rightFoot, 9:leftFoot, 10:rightUpperArm,\
-        11:leftUpperArm, 12:rightForeArm, 13:leftForeArm,\
-        14:rightHand, 15:leftHand}'''
+    x, y, z = cuerpos['pelvis'].getPosition()
 
     gluLookAt(*(i for i in (2, 4, 3) + (x, y, z) + tuple(upAxis)))
 
@@ -605,6 +584,7 @@ glutCreateWindow("")
 
 # create an ODE world object
 world = World()
+
 world.setGravity(-10 * upAxis)
 world.setERP(0.1)
 world.setCFM(1e-4)
