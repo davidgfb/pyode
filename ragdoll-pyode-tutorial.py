@@ -141,76 +141,68 @@ class Ragdoll():
                     self.rightFoot, self.leftFoot, self.rightUpperArm,\
                     self.leftUpperArm, self.rightForeArm, self.leftForeArm,\
                     self.rightHand, self.leftHand =\
-                    self.addBody(k * j, k, 0.13, 'chest'),\
-                    self.addBody((CHEST_H - 0.1) * upAxis,
-                                          (HIP_H + 0.1) * upAxis, 0.125, 'belly'),\
-                    self.addBody((-PELVIS_W / 2, HIP_H, 0),
-                                       (PELVIS_W / 2, HIP_H, 0), 0.125, 'pelvis'),\
-                    self.addBody(BROW_H * upAxis, MOUTH_H * upAxis, 0.11, 'head'),\
-                    self.addBody(R_HIP_POS, R_KNEE_POS, 0.11, 'rightUpperLeg'),\
-                    self.addBody(L_HIP_POS, L_KNEE_POS, 0.11, 'leftUpperLeg'),\
-                                         self.addBody(R_KNEE_POS,\
-                                          R_ANKLE_POS, 0.09, 'rightLowerLeg'),\
-                                          self.addBody(L_KNEE_POS, L_ANKLE_POS,\
-                                         0.09, 'leftLowerLeg'),\
-                                         self.addBody(R_HEEL_POS, R_TOES_POS,\
-                                      0.09, 'rightFoot'), self.addBody(L_HEEL_POS, L_TOES_POS,\
-                                     0.09, 'leftFoot'), self.addBody(R_SHOULDER_POS,\
-                                          R_ELBOW_POS, 0.08, 'rightUpperArm'),\
-                                          self.addBody(L_SHOULDER_POS,\
-                                         L_ELBOW_POS, 0.08, 'leftUpperArm'),\
-                                         self.addBody(R_ELBOW_POS,\
-                                         R_WRIST_POS, 0.075, 'rightForeArm'),\
-                                         self.addBody(L_ELBOW_POS, L_WRIST_POS,\
-                                        0.075, 'leftForeArm'),\
-                                        self.addBody(R_WRIST_POS, R_FINGERS_POS,\
-                                      0.075, 'rightHand'),\
-                                      self.addBody(L_WRIST_POS, L_FINGERS_POS,\
-                                     0.075, 'leftHand') #no mape #0...15
-
-        self.midSpine, self.lowSpine = self.addFixedJoint(self.chest, self.belly),\
-                                       self.addFixedJoint(self.belly, self.pelvis) #no mape
-
+                    tuple(self.addBody(a, b, c, d) for a, b, c, d in\
+                                             ((k * j, k, 0.13, 'chest'),\
+     ((CHEST_H - 0.1) * upAxis, (HIP_H + 0.1) * upAxis, 0.125, 'belly'),\
+ ((-PELVIS_W / 2, HIP_H, 0), (PELVIS_W / 2, HIP_H, 0), 0.125, 'pelvis'),\
+                      (BROW_H * upAxis, MOUTH_H * upAxis, 0.11, 'head'),\
+                         (R_HIP_POS, R_KNEE_POS, 0.11, 'rightUpperLeg'),\
+                          (L_HIP_POS, L_KNEE_POS, 0.11, 'leftUpperLeg'),\
+                       (R_KNEE_POS, R_ANKLE_POS, 0.09, 'rightLowerLeg'),\
+                        (L_KNEE_POS, L_ANKLE_POS, 0.09, 'leftLowerLeg'),\
+                            (R_HEEL_POS, R_TOES_POS, 0.09, 'rightFoot'),\
+                             (L_HEEL_POS, L_TOES_POS, 0.09, 'leftFoot'),\
+                   (R_SHOULDER_POS, R_ELBOW_POS, 0.08, 'rightUpperArm'),\
+                    (L_SHOULDER_POS, L_ELBOW_POS, 0.08, 'leftUpperArm'),\
+                      (R_ELBOW_POS, R_WRIST_POS, 0.075, 'rightForeArm'),\
+                       (L_ELBOW_POS, L_WRIST_POS, 0.075, 'leftForeArm'),\
+                       (R_WRIST_POS, R_FINGERS_POS, 0.075, 'rightHand'),\
+                        (L_WRIST_POS, L_FINGERS_POS, 0.075, 'leftHand')))
+        self.midSpine, self.lowSpine =\
+            tuple(self.addFixedJoint(a, b) for a, b in\
+                  ((self.chest, self.belly),\
+                   (self.belly, self.pelvis)))                                   
         k, l, m, n, o, p, q, r, s = -pi / 10, -0.15 * pi, 0.75 * pi, 0.3 * pi,\
-                                 0.05 * pi, pi / 2, pi / 4, 0.6 * pi, 0.2 * pi
-
+                                 pi / 20, pi / 2, pi / 4, 0.6 * pi, pi / 5
         self.neck = self.addBallJoint(self.chest, self.head,\
-            NECK_H * upAxis, -upAxis, bkwdAxis, q, q, 80, 40)
-       
-        self.rightHip, self.leftHip = self.addUniversalJoint(self.pelvis,\
-                                        self.rightUpperLeg,\
-                                            R_HIP_POS, bkwdAxis,\
-                                rightAxis, k, n, l, m),\
-                                self.addUniversalJoint(self.pelvis,\
-                                self.leftUpperLeg, L_HIP_POS,\
-                                fwdAxis, rightAxis, k, n, l, m) #no mape
-      
-        self.rightKnee, self.leftKnee, self.rightAnkle, self.leftAnkle =\
-                        self.addHingeJoint(self.rightUpperLeg,
-            self.rightLowerLeg, R_KNEE_POS, leftAxis, 0, m),\
-            self.addHingeJoint(self.leftUpperLeg,
-            self.leftLowerLeg, L_KNEE_POS, leftAxis, 0, m),\
-            self.addHingeJoint(self.rightLowerLeg,
-            self.rightFoot, R_ANKLE_POS, rightAxis, k, o),\
-            self.addHingeJoint(self.leftLowerLeg,
-            self.leftFoot, L_ANKLE_POS, rightAxis, k, o) #no mape
+            NECK_H * upAxis, -upAxis, bkwdAxis, q, q, 80, 40)      
+        self.rightHip, self.leftHip =\
+    tuple(self.addUniversalJoint(a, b, c, d, e, f, g, h, i) for\
+        a, b, c, d, e, f, g, h, i in\
+        ((self.pelvis, self.rightUpperLeg, R_HIP_POS, bkwdAxis,\
+                                        rightAxis, k, n, l, m),\
+           (self.pelvis, self.leftUpperLeg, L_HIP_POS, fwdAxis,\
+                                        rightAxis, k, n, l, m)))  
 
+        self.rightKnee, self.leftKnee, self.rightAnkle,\
+                                       self.leftAnkle =\
+         tuple(self.addHingeJoint(a, b, c, d, e, f) for\
+              a, b, c, d, e, f in ((self.rightUpperLeg,\
+       self.rightLowerLeg, R_KNEE_POS, leftAxis, 0, m),\
+     (self.leftUpperLeg, self.leftLowerLeg, L_KNEE_POS,\
+                                       leftAxis, 0, m),\
+      (self.rightLowerLeg, self.rightFoot, R_ANKLE_POS,\
+                                      rightAxis, k, o),\
+        (self.leftLowerLeg, self.leftFoot, L_ANKLE_POS,\
+                                      rightAxis, k, o)))
         self.rightShoulder, self.leftShoulder =\
-                            self.addBallJoint(self.chest, self.rightUpperArm,
-            R_SHOULDER_POS, norm3((-1, -1, 4)), bkwdAxis, p,
-            q, 150, 100), self.addBallJoint(self.chest, self.leftUpperArm,
-            L_SHOULDER_POS, norm3((1, -1, 4)), bkwdAxis, p,
-            q, 150, 100) #no mape
-                     
-        self.rightElbow, self.leftElbow, self.rightWrist, self.leftWrist =\
-                         self.addHingeJoint(self.rightUpperArm,
-            self.rightForeArm, R_ELBOW_POS, downAxis, 0, r),\
-            self.addHingeJoint(self.leftUpperArm,
-            self.leftForeArm, L_ELBOW_POS, upAxis, 0, r),\
-            self.addHingeJoint(self.rightForeArm,
-            self.rightHand, R_WRIST_POS, fwdAxis, k, s),\
-            self.addHingeJoint(self.leftForeArm,
-            self.leftHand, L_WRIST_POS, bkwdAxis, k, s) #no mape
+    tuple(self.addBallJoint(a, b, c, d, e, f, g, h, i) for\
+                              a, b, c, d, e, f, g, h, i in\
+         ((self.chest, self.rightUpperArm, R_SHOULDER_POS,\
+            norm3((-1, -1, 4)), bkwdAxis, p, q, 150, 100),\
+           (self.chest, self.leftUpperArm, L_SHOULDER_POS,\
+             norm3((1, -1, 4)), bkwdAxis, p, q, 150, 100)))                    
+        self.rightElbow, self.leftElbow, self.rightWrist,\
+                                         self.leftWrist =\
+           tuple(self.addHingeJoint(a, b, c, d, e, f) for\
+                a, b, c, d, e, f in ((self.rightUpperArm,\
+         self.rightForeArm, R_ELBOW_POS, downAxis, 0, r),\
+       (self.leftUpperArm, self.leftForeArm, L_ELBOW_POS,\
+                                           upAxis, 0, r),\
+         (self.rightForeArm, self.rightHand, R_WRIST_POS,\
+                                          fwdAxis, k, s),\
+           (self.leftForeArm, self.leftHand, L_WRIST_POS,\
+                                         bkwdAxis, k, s)))
 
     def addBody(self, p1, p2, radius, name):
         """Adds a capsule body between joint positions p1 and p2 and with given
