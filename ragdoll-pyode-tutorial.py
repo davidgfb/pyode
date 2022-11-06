@@ -33,7 +33,8 @@ leftAxis, downAxis, fwdAxis = -rightAxis, -upAxis, -bkwdAxis
 
 '''rotation directions are named by the third (z-axis) row of the 3x3 matrix,
 because ODE capsules are oriented along the z-axis'''
-rightRot = array(tuple(-bkwdAxis) + tuple(upAxis) + tuple(rightAxis))
+rightRot = array(tuple(-bkwdAxis) + tuple(upAxis) +\
+                 tuple(rightAxis))
 
 UPPER_ARM_LEN, FORE_ARM_LEN, HAND_LEN, FOOT_LEN, HEEL_LEN = 0.3,\
                                         0.25, 0.13, 0.18, 0.05
@@ -78,7 +79,8 @@ k = FOOT_LEN * bkwdAxis
 R_TOES_POS, L_TOES_POS = R_ANKLE_POS + k, L_ANKLE_POS + k
 
 # polygon resolution for capsule bodies
-cuerpos, nCuerpo, CAPSULE_SLICES, CAPSULE_STACKS, t = {}, 0, 16, 12, 0
+cuerpos, nCuerpo, CAPSULE_SLICES, CAPSULE_STACKS, t = {}, 0, 16,\
+                                                      12, 0
 
 def a_Array(a, b):
     return tuple(map(array, (a, b))) 
@@ -132,94 +134,93 @@ def getBodyRelVec(b, v):
 class Ragdoll():
     def __init__(self, world, space, density, offset = zeros(3)):
         """Creates a ragdoll of standard size at the given offset."""
-        self.world, self.space, self.density, self.bodies, self.geoms, self.joints,\
-                    self.totalMass, self.offset, k = world, space, density, [], [],\
-                    [], 0, offset, (CHEST_W / 2, CHEST_H, 0)
+        self.world, self.space, self.density, self.bodies,\
+                    self.geoms, self.joints, self.totalMass,\
+                    self.offset, k = world, space, density, [],\
+                    [], [], 0, offset, (CHEST_W / 2, CHEST_H, 0)
 
-        self.chest, self.belly, self.pelvis, self.head, self.rightUpperLeg,\
-                    self.leftUpperLeg, self.rightLowerLeg, self.leftLowerLeg,\
-                    self.rightFoot, self.leftFoot, self.rightUpperArm,\
-                    self.leftUpperArm, self.rightForeArm, self.leftForeArm,\
+        self.chest, self.belly, self.pelvis, self.head,\
+                    self.rightUpperLeg, self.leftUpperLeg,\
+                    self.rightLowerLeg, self.leftLowerLeg,\
+                    self.rightFoot, self.leftFoot,\
+                    self.rightUpperArm, self.leftUpperArm,\
+                    self.rightForeArm, self.leftForeArm,\
                     self.rightHand, self.leftHand =\
-                    tuple(self.addBody(a, b, c, d) for a, b, c, d in\
-                                             ((k * j, k, 0.13, 'chest'),\
-     ((CHEST_H - 0.1) * upAxis, (HIP_H + 0.1) * upAxis, 0.125, 'belly'),\
- ((-PELVIS_W / 2, HIP_H, 0), (PELVIS_W / 2, HIP_H, 0), 0.125, 'pelvis'),\
-                      (BROW_H * upAxis, MOUTH_H * upAxis, 0.11, 'head'),\
-                         (R_HIP_POS, R_KNEE_POS, 0.11, 'rightUpperLeg'),\
-                          (L_HIP_POS, L_KNEE_POS, 0.11, 'leftUpperLeg'),\
-                       (R_KNEE_POS, R_ANKLE_POS, 0.09, 'rightLowerLeg'),\
-                        (L_KNEE_POS, L_ANKLE_POS, 0.09, 'leftLowerLeg'),\
-                            (R_HEEL_POS, R_TOES_POS, 0.09, 'rightFoot'),\
-                             (L_HEEL_POS, L_TOES_POS, 0.09, 'leftFoot'),\
-                   (R_SHOULDER_POS, R_ELBOW_POS, 0.08, 'rightUpperArm'),\
-                    (L_SHOULDER_POS, L_ELBOW_POS, 0.08, 'leftUpperArm'),\
-                      (R_ELBOW_POS, R_WRIST_POS, 0.075, 'rightForeArm'),\
-                       (L_ELBOW_POS, L_WRIST_POS, 0.075, 'leftForeArm'),\
-                       (R_WRIST_POS, R_FINGERS_POS, 0.075, 'rightHand'),\
-                        (L_WRIST_POS, L_FINGERS_POS, 0.075, 'leftHand')))
+     tuple(self.addBody(a, b, c, d) for a, b, c, d in\
+         ((k * j, k, 0.13, 'chest'),\
+         ((CHEST_H - 1 / 10) * upAxis, (HIP_H + 1 / 10) * upAxis,\
+           1 / 8, 'belly'), ((-PELVIS_W / 2, HIP_H, 0),\
+          (PELVIS_W / 2, HIP_H, 0), 1 / 8, 'pelvis'),\
+          (BROW_H * upAxis, MOUTH_H * upAxis, 0.11, 'head'),\
+          (R_HIP_POS, R_KNEE_POS, 0.11, 'rightUpperLeg'),\
+          (L_HIP_POS, L_KNEE_POS, 0.11, 'leftUpperLeg'),\
+          (R_KNEE_POS, R_ANKLE_POS, 0.09, 'rightLowerLeg'),\
+          (L_KNEE_POS, L_ANKLE_POS, 0.09, 'leftLowerLeg'),\
+          (R_HEEL_POS, R_TOES_POS, 0.09, 'rightFoot'),
+          (L_HEEL_POS, L_TOES_POS, 0.09, 'leftFoot'),\
+          (R_SHOULDER_POS, R_ELBOW_POS, 0.08, 'rightUpperArm'),\
+          (L_SHOULDER_POS, L_ELBOW_POS, 0.08, 'leftUpperArm'),\
+          (R_ELBOW_POS, R_WRIST_POS, 0.075, 'rightForeArm'),\
+          (L_ELBOW_POS, L_WRIST_POS, 0.075, 'leftForeArm'),\
+          (R_WRIST_POS, R_FINGERS_POS, 0.075, 'rightHand'),\
+          (L_WRIST_POS, L_FINGERS_POS, 0.075, 'leftHand')))
         self.midSpine, self.lowSpine =\
-            tuple(self.addFixedJoint(a, b) for a, b in\
-                  ((self.chest, self.belly),\
-                   (self.belly, self.pelvis)))                                   
-        k, l, m, n, o, p, q, r, s = -pi / 10, -0.15 * pi, 0.75 * pi, 0.3 * pi,\
-                                 pi / 20, pi / 2, pi / 4, 0.6 * pi, pi / 5
+        tuple(self.addFixedJoint(a, b) for a, b in\
+            ((self.chest, self.belly),\
+             (self.belly, self.pelvis)))                                   
+        k, l, m, n, o, p, q, r, s = -pi / 10, -0.15 * pi,\
+                                    0.75 * pi, 0.3 * pi,\
+                                    pi / 20, pi / 2, pi / 4,\
+                                    0.6 * pi, pi / 5
         self.neck = self.addBallJoint(self.chest, self.head,\
-            NECK_H * upAxis, -upAxis, bkwdAxis, q, q, 80, 40)      
+                    NECK_H * upAxis, -upAxis, bkwdAxis, q, q, 80,\
+                    40)      
         self.rightHip, self.leftHip =\
-    tuple(self.addUniversalJoint(a, b, c, d, e, f, g, h, i) for\
-        a, b, c, d, e, f, g, h, i in\
-        ((self.pelvis, self.rightUpperLeg, R_HIP_POS, bkwdAxis,\
-                                        rightAxis, k, n, l, m),\
-           (self.pelvis, self.leftUpperLeg, L_HIP_POS, fwdAxis,\
-                                        rightAxis, k, n, l, m)))  
+       (self.addUniversalJoint(a, b, c, d, e, f, g, h, i) for\
+        a, b, c, d, e, f, g, h, i in ((self.pelvis,\
+        self.rightUpperLeg, R_HIP_POS, bkwdAxis, rightAxis, k,\
+        n, l, m), (self.pelvis, self.leftUpperLeg, L_HIP_POS,\
+        fwdAxis, rightAxis, k, n, l, m)))  
 
         self.rightKnee, self.leftKnee, self.rightAnkle,\
-                                       self.leftAnkle =\
-         tuple(self.addHingeJoint(a, b, c, d, e, f) for\
-              a, b, c, d, e, f in ((self.rightUpperLeg,\
-       self.rightLowerLeg, R_KNEE_POS, leftAxis, 0, m),\
-     (self.leftUpperLeg, self.leftLowerLeg, L_KNEE_POS,\
-                                       leftAxis, 0, m),\
-      (self.rightLowerLeg, self.rightFoot, R_ANKLE_POS,\
-                                      rightAxis, k, o),\
-        (self.leftLowerLeg, self.leftFoot, L_ANKLE_POS,\
-                                      rightAxis, k, o)))
+        self.leftAnkle =\
+        tuple(self.addHingeJoint(a, b, c, d, e, f) for\
+        a, b, c, d, e, f in ((self.rightUpperLeg,\
+        self.rightLowerLeg, R_KNEE_POS, leftAxis, 0, m),\
+       (self.leftUpperLeg, self.leftLowerLeg, L_KNEE_POS,\
+        leftAxis, 0, m), (self.rightLowerLeg, self.rightFoot,\
+        R_ANKLE_POS, rightAxis, k, o), (self.leftLowerLeg,\
+        self.leftFoot, L_ANKLE_POS, rightAxis, k, o)))
         self.rightShoulder, self.leftShoulder =\
-    tuple(self.addBallJoint(a, b, c, d, e, f, g, h, i) for\
-                              a, b, c, d, e, f, g, h, i in\
-         ((self.chest, self.rightUpperArm, R_SHOULDER_POS,\
-            norm3((-1, -1, 4)), bkwdAxis, p, q, 150, 100),\
-           (self.chest, self.leftUpperArm, L_SHOULDER_POS,\
-             norm3((1, -1, 4)), bkwdAxis, p, q, 150, 100)))                    
+        tuple(self.addBallJoint(a, b, c, d, e, f, g, h, i) for\
+        a, b, c, d, e, f, g, h, i in ((self.chest,\
+        self.rightUpperArm, R_SHOULDER_POS, norm3((-1, -1, 4)),\
+        bkwdAxis, p, q, 150, 100), (self.chest,\
+        self.leftUpperArm, L_SHOULDER_POS, norm3((1, -1, 4)),\
+        bkwdAxis, p, q, 150, 100)))                    
         self.rightElbow, self.leftElbow, self.rightWrist,\
-                                         self.leftWrist =\
-           tuple(self.addHingeJoint(a, b, c, d, e, f) for\
-                a, b, c, d, e, f in ((self.rightUpperArm,\
-         self.rightForeArm, R_ELBOW_POS, downAxis, 0, r),\
-       (self.leftUpperArm, self.leftForeArm, L_ELBOW_POS,\
-                                           upAxis, 0, r),\
-         (self.rightForeArm, self.rightHand, R_WRIST_POS,\
-                                          fwdAxis, k, s),\
-           (self.leftForeArm, self.leftHand, L_WRIST_POS,\
-                                         bkwdAxis, k, s)))
+        self.leftWrist =\
+        tuple(self.addHingeJoint(a, b, c, d, e, f) for\
+        a, b, c, d, e, f in ((self.rightUpperArm,\
+        self.rightForeArm, R_ELBOW_POS, downAxis, 0, r),\
+       (self.leftUpperArm, self.leftForeArm, L_ELBOW_POS, upAxis,\
+        0, r), (self.rightForeArm, self.rightHand, R_WRIST_POS,\
+        fwdAxis, k, s), (self.leftForeArm, self.leftHand,\
+        L_WRIST_POS, bkwdAxis, k, s)))
+
+    f = lambda self, a, b : a.append(b)
 
     def addBody(self, p1, p2, radius, name):
         """Adds a capsule body between joint positions p1 and p2 and with given
         radius to the ragdoll."""
         global cuerpos, nCuerpo
-        
-        p1, p2 = a_Array(p1,p2)
-        
-        p1 += self.offset
-        p2 += self.offset
+
+        p1, p2 = (p1, p2) + self.offset
 
         # cylinder length not including endcaps, make capsules overlap by half
         #   radius at joints
         cyllen, body = norm(p1 - p2) - radius, Body(self.world)
-
-        cuerpos[name] = body #nCuerpo
-        #nCuerpo += 1
+        cuerpos[name] = body 
         
         m = Mass()
         m.setCapsule(self.density, 3, radius, cyllen)
@@ -228,9 +229,9 @@ class Ragdoll():
         # set parameters for drawing the body
         # create a capsule geom for collision detection
         # define body rotation automatically from body axis
-        body.shape, body.length, body.radius, geom, za = "capsule", cyllen, radius,\
-                                        GeomCCylinder(self.space, radius, cyllen),\
-                                        norm3(p2 - p1) 
+        body.shape, body.length, body.radius, geom, za =\
+        "capsule", cyllen, radius, GeomCCylinder(self.space,\
+        radius, cyllen), norm3(p2 - p1)
 
         geom.setBody(body)
 
@@ -241,44 +242,53 @@ class Ragdoll():
             xa = upAxis
             
         ya = cross(za, xa) 
-        rot = array((norm3(cross(ya, za)), ya, za)).transpose().reshape(9)
+        rot = array((norm3(cross(ya, za)), ya, za)). transpose().\
+              reshape(9)
         
         body.setPosition((p1 + p2) / 2)
         body.setRotation(rot)
 
-        self.bodies.append(body)
-        self.geoms.append(geom)
+        tuple(self.f(a, b) for a, b in ((self.bodies, body),\
+                                        (self.geoms, geom))) #?
         
         self.totalMass += body.getMass().mass
 
         return body
 
-    def addFixedJoint(self, body1, body2):
-        joint = FixedJoint(self.world)
-        joint.attach(body1, body2)
-        joint.setFixed()
-
-        joint.style = "fixed"
-        self.joints.append(joint)
+    def get_Junta(self, j_Style, joint):
+        joint.style = j_Style
+        self.f(self.joints, joint)
 
         return joint
 
+    def addFixedJoint(self, body1, body2):
+        joint = FixedJoint(self.world)
+
+        joint.attach(body1, body2)
+
+        joint.setFixed()
+
+        return self.get_Junta("fixed", joint)
+
     inf = float('inf')
+
+    def junta(self, junta, cuerpos, ancla):
+        junta.attach(*cuerpos) # joint
+        junta.setAnchor(ancla)
 
     def addHingeJoint(self, body1, body2, anchor, axis,\
                       loStop = -inf, hiStop = inf):
         anchor += array(self.offset)
         joint = HingeJoint(self.world)
-        joint.attach(body1, body2)
-        joint.setAnchor(anchor)
+
+        self.junta(joint, (body1, body2), anchor)
+
         joint.setAxis(axis)
+
         tuple(joint.setParam(a, b) for a, b in\
               ((ParamLoStop, loStop), (ParamHiStop, hiStop)))
         
-        joint.style = "hinge"
-        self.joints.append(joint)
-
-        return joint
+        return self.get_Junta("hinge", joint)
 
     def addUniversalJoint(self, body1, body2, anchor, axis1,\
                           axis2, loStop1 = -inf, hiStop1 = inf,\
@@ -286,17 +296,17 @@ class Ragdoll():
         anchor += array(self.offset)
 
         joint = UniversalJoint(self.world)
-        joint.attach(body1, body2)
-        joint.setAnchor(anchor)
+
+        self.junta(joint, (body1, body2), anchor)
+
         joint.setAxis1(axis1)
         joint.setAxis2(axis2)
+        
         tuple(joint.setParam(a, b) for a, b in\
-              ((ParamLoStop, loStop1), (ParamHiStop, hiStop1),\
-               (ParamLoStop2, loStop2), (ParamHiStop2, hiStop2)))
-        joint.style = "univ"
-        self.joints.append(joint)
+            ((ParamLoStop, loStop1), (ParamHiStop, hiStop1),\
+             (ParamLoStop2, loStop2), (ParamHiStop2, hiStop2)))
 
-        return joint
+        return self.get_Junta("univ", joint)
 
     def addBallJoint(self, body1, body2, anchor, baseAxis,\
                      baseTwistUp, flexLimit = pi,\
@@ -306,16 +316,17 @@ class Ragdoll():
 
         # create the joint
         joint = BallJoint(self.world)
-        joint.attach(body1, body2)
-        joint.setAnchor(anchor)
+
+        self.junta(joint, (body1, body2), anchor)
 
         '''store the base orientation of the joint in the local coordinate system
         of the primary body (because baseAxis and baseTwistUp may not be
         orthogonal, the nearest vector to baseTwistUp but orthogonal to
         baseAxis is calculated and stored with the joint)'''
-        joint.baseAxis, tempTwistUp = getBodyRelVec(body1, baseAxis),\
-                                      getBodyRelVec(body1, baseTwistUp) #no ite
-
+        joint.baseAxis, tempTwistUp =\
+                        tuple(getBodyRelVec(body1, a) for a in\
+                             (baseAxis, baseTwistUp))
+                        
         baseSide = norm3(cross(tempTwistUp, joint.baseAxis))
         joint.baseTwistUp = norm3(cross(joint.baseAxis, baseSide)) #interdep
 
@@ -325,24 +336,24 @@ class Ragdoll():
 
         # store joint rotation limits and resistive force factors
         joint.flexLimit, joint.twistLimit, joint.flexForce,\
-                         joint.twistForce, joint.style =\
+                         joint.twistForce =\
                          flexLimit, twistLimit, flexForce,\
-                         twistForce, "ball"
-        self.joints.append(joint)
+                         twistForce
 
-        return joint
+        return self.get_Junta("ball", joint)
 
     def update(self):
         for j in self.joints:
             if j.style == "ball":
+                j_B0, j_B1 = j.getBody(0), j.getBody(1)
                 # determine base and current attached body axes
-                baseAxis = rotate3(j.getBody(0).getRotation(),\
+                baseAxis = rotate3(j_B0.getRotation(),\
                                    j.baseAxis)
-                currAxis = traspuesta(j.getBody(1).getRotation())[2]
+                currAxis = traspuesta(j_B1.getRotation())[2]
 
                 # get angular velocity of attached body relative to fixed body
-                relAngVel = array(j.getBody(1).getAngularVel()) -\
-                            array(j.getBody(0).getAngularVel())
+                relAngVel = array(j_B1.getAngularVel()) -\
+                            array(j_B0.getAngularVel())
                 twistAngVel = project3(relAngVel, currAxis)
                 flexAngVel = relAngVel - twistAngVel
 
@@ -351,15 +362,15 @@ class Ragdoll():
 
                 if angle > j.flexLimit:
                     # add torque to push body back towards base axis
-                    tuple(map(j.getBody(1).addTorque,\
+                    tuple(map(j_B1.addTorque,\
                         ((norm3(cross(currAxis, baseAxis)) *\
-                        (angle - j.flexLimit) * j.flexForce),\
-                        (-flexAngVel / 100 * j.flexForce)))) #dampen flex to prevent bounceback
+                         (angle - j.flexLimit) * j.flexForce),\
+                         (-flexAngVel / 100 * j.flexForce)))) #dampen flex to prevent bounceback
 
                 '''determine the base twist up vector for the current attached
                 body by applying the current joint flex to the fixed body's
                 base twist up vector'''
-                baseTwistUp = rotate3(j.getBody(0).getRotation(),\
+                baseTwistUp = rotate3(j_B0.getRotation(),\
                                       j.baseTwistUp)
 
                 """Returns the row-major 3x3 rotation matrix defining a rotation around axis by
@@ -369,34 +380,25 @@ class Ragdoll():
                 cosTheta, sinTheta = cos(angle), sin(angle)
                 t = 1 - cosTheta 
                 a0, a1, a2 = axis
+                sT_A0, sT_A1, sT_A2, t_A0_A1, t_A0_A2, t_A1_A2 =\
+                sinTheta * a0, sinTheta * a1, sinTheta * a2,\
+                t * a0 * a1, t * a0 * a2, t * a1 * a2
+
                 base2current = (t * a0 ** 2 + cosTheta,
-                                t * a0 * a1 - sinTheta * a2,
-                                t * a0 * a2 + sinTheta * a1,
+                                t_A0_A1 - sT_A2, t_A0_A2 + sT_A1,
 
-                                t * a0 * a1 + sinTheta * a2,
+                                t_A0_A1 + sT_A2,
                                 t * a1 ** 2 + cosTheta,
-                                t * a1 * a2 - sinTheta * a0,
+                                t_A1_A2 - sT_A0,
 
-                                t * a0 * a2 - sinTheta * a1,
-                                t * a1 * a2 + sinTheta * a0,
+                                t_A0_A2 - sT_A1, t_A1_A2 + sT_A0,
                                 t * a2 ** 2 + cosTheta)
-
-                '''from scipy.spatial.transform import Rotation
-
-                r = Rotation.from_euler('xyz', axis, degrees=False)
-                #print('\n\n',r.as_matrix(), axis)
-                v = Rotation.from_euler('x', angle, degrees=False) #yz
-                #print('\n\n',v.as_matrix(), angle)
-                
-                print('\n\n',(r * v).as_matrix(),\
-                      base2current)'''
 
                 projBaseTwistUp = rotate3(base2current,\
                                           baseTwistUp)
 
                 # determine the current twist up vector from the attached body
-                actualTwistUp = rotate3(\
-                                j.getBody(1).getRotation(),\
+                actualTwistUp = rotate3(j_B1.getRotation(),\
                                 j.baseTwistUp2)
 
                 # restrict limbs twisting
@@ -404,10 +406,10 @@ class Ragdoll():
 
                 if angle > j.twistLimit:
                     # add torque to rotate body back towards base angle
-                    tuple(map(j.getBody(1).addTorque,\
-                        ((norm3(cross(actualTwistUp, projBaseTwistUp)) *\
-                        (angle - j.twistLimit) * j.twistForce),\
-                        (-twistAngVel / 100 * j.twistForce)))) # dampen twisting
+                    tuple(map(j_B1.addTorque,\
+                    ((norm3(cross(actualTwistUp, projBaseTwistUp)) *\
+                     (angle - j.twistLimit) * j.twistForce),\
+                     (-twistAngVel / 100 * j.twistForce)))) # dampen twisting
 
 def createCapsule(world, space, density, length, radius):
     """Creates a capsule body and corresponding geom.
@@ -420,8 +422,8 @@ def createCapsule(world, space, density, length, radius):
     body.setMass(M)
 
     # set parameters for drawing the body # create a capsule geom for collision detection
-    body.shape, body.length, body.radius, geom = "capsule", length, radius,\
-                                                 GeomCCylinder(space, radius, length)
+    body.shape, body.length, body.radius, geom =\
+    "capsule", length, radius,GeomCCylinder(space, radius, length)
     geom.setBody(body)
 
     return body, geom
@@ -430,6 +432,8 @@ def near_callback(args, geom1, geom2):
     """Callback function for the collide() method.
     This function checks if the given geoms do collide and creates contact
     joints if they do."""
+    global SloMo
+
     if not areConnected(geom1.getBody(), geom2.getBody()):
         # check if the objects collide
         contacts = collide(geom1, geom2)
@@ -438,14 +442,17 @@ def near_callback(args, geom1, geom2):
         world, contactgroup = args
 
         for c in contacts:
-            c.setBounce(0.2)
+            if type(geom1) == type(geom2):# else False
+                SloMo = 4 * 1 + 1 
+                          
+            c.setBounce(1 / 5)
             c.setMu(500) # 0-5 = very slippery, 50-500 = normal, 5000 = very sticky
-            ContactJoint(world, contactgroup, c).attach(geom1.getBody(),\
-                                                        geom2.getBody()) #uso global?
+            ContactJoint(world, contactgroup, c).\
+                         attach(geom1.getBody(), geom2.getBody()) #uso global?
 
 def prepare_GL():
     """Setup basic OpenGL rendering with smooth shading and a single light.""" 
-    #glClearColor(*(i for i in (0.8, 0.8, 0.9, 0))) #* arg unpacking
+    #glClearColor(*(0.8, 0.8, 0.9, 0)) 
     glClear(16640)
     tuple(map(glEnable, (GL_DEPTH_TEST, GL_LIGHTING)))   
     glShadeModel(GL_SMOOTH)
@@ -456,11 +463,11 @@ def prepare_GL():
     glMatrixMode(GL_MODELVIEW)
     glLoadIdentity()   
     tuple(map(glEnable, (GL_LIGHT0, GL_COLOR_MATERIAL)))
-    glColor3f(*(i for i in 0.8 * ones(3)))
+    glColor3f(*(0.8 * ones(3)))
 
     x, y, z = cuerpos['pelvis'].getPosition()
 
-    gluLookAt(*(i for i in (2, 4, 3) + (x, y, z) + tuple(upAxis)))
+    gluLookAt(*((2, 4, 3) + (x, y, z) + tuple(upAxis)))
 
 def draw_body(body):
     """Draw an ODE body."""
@@ -477,15 +484,16 @@ def draw_body(body):
     glMultMatrixf((tuple(array(r).reshape(12).tolist()) +\
                    tuple(body.getPosition()) + (1,)))
     
-    if body.shape == "capsule":
+    if body.shape == "capsule": 
         cylHalfHeight = body.length / 2
         quadric = gluNewQuadric()
-        glTranslatef(*(i for i in -cylHalfHeight * bkwdAxis))
+        
+        glTranslatef(*(-cylHalfHeight * bkwdAxis))
         glutSolidSphere(body.radius, CAPSULE_SLICES,\
                         CAPSULE_STACKS)
         gluCylinder(quadric, body.radius, body.radius,\
                     body.length, CAPSULE_SLICES, CAPSULE_STACKS)     
-        glTranslatef(*(i for i in body.length * bkwdAxis))
+        glTranslatef(*(body.length * bkwdAxis)) #no need pp
         glutSolidSphere(body.radius, CAPSULE_SLICES,\
                         CAPSULE_STACKS)
 
@@ -524,10 +532,7 @@ def onDraw():
     global t
     
     prepare_GL()
-
-    for b in bodies + ragdoll.bodies:
-        draw_body(b)
-
+    tuple(draw_body(b) for b in bodies + ragdoll.bodies)
     glutSwapBuffers()
 
     #contador fps
@@ -537,7 +542,7 @@ def onDraw():
 
 def onIdle():
     """GLUT idle processing callback, performs ODE simulation step."""
-    global Paused, lasttime, numiter, t1
+    global Paused, lasttime, t1
 
     if not Paused:
         t = dt - time() + lasttime
@@ -553,8 +558,6 @@ def onIdle():
 
             # Simulation step (with slo motion)
             world.step(dt / stepsPerFrame / SloMo)
-
-            numiter += 1
 
             # apply internal ragdoll forces
             ragdoll.update()
@@ -590,14 +593,16 @@ is needed to avoid Python garbage collecting these bodies)'''
 '''create a joint group for the contact joints generated during collisions
 between two bodies collide'''
 # set the initial simulation loop parameters
-floor, bodies, contactgroup, fps, stepsPerFrame, SloMo, Paused, lasttime, numiter =\
-       GeomPlane(space, upAxis, 0), [], JointGroup(), 100, 2, 1, False, time(), 0
+floor, bodies, contactgroup, fps, stepsPerFrame, SloMo, Paused,\
+lasttime = GeomPlane(space, upAxis, 0), [],\
+JointGroup(), 100, 2, 1, False, time()
 # create the ragdoll
-dt, ragdoll, pos = 1 / fps, Ragdoll(world, space, 500, 0.9 * upAxis),\
-                   (uniform(-0.3, 0.3), 0.2, uniform(-0.15, 0.2))
+dt, ragdoll, pos = 1 / fps, Ragdoll(world, space, 500,\
+0.9 * upAxis), (uniform(-0.3, 0.3), 1 / 5, uniform(-0.15, 1 / 5))
  
 # create an obstacle
-obstacle, obsgeom = createCapsule(world, space, 1000, 0.05, 0.15)
+obstacle, obsgeom = createCapsule(world, space, 1000, 1 / 20,\
+                                  0.15)
   
 #pos = (0.27396178783269359, 0.20000000000000001, 0.17531818795388002)
 obstacle.setPosition(pos)
