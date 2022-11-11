@@ -362,10 +362,10 @@ class Ragdoll():
 
                 if angle > j.flexLimit:
                     # add torque to push body back towards base axis
-                    tuple(map(j_B1.addTorque,\
+                    (*(map(j_B1.addTorque,\
                         ((norm3(cross(currAxis, baseAxis)) *\
                          (angle - j.flexLimit) * j.flexForce),\
-                         (-flexAngVel / 100 * j.flexForce)))) #dampen flex to prevent bounceback
+                         (-flexAngVel / 100 * j.flexForce)))),) #dampen flex to prevent bounceback
 
                 '''determine the base twist up vector for the current attached
                 body by applying the current joint flex to the fixed body's
@@ -406,10 +406,10 @@ class Ragdoll():
 
                 if angle > j.twistLimit:
                     # add torque to rotate body back towards base angle
-                    tuple(map(j_B1.addTorque,\
+                    (*(map(j_B1.addTorque,\
                     ((norm3(cross(actualTwistUp, projBaseTwistUp)) *\
                      (angle - j.twistLimit) * j.twistForce),\
-                     (-twistAngVel / 100 * j.twistForce)))) # dampen twisting
+                     (-twistAngVel / 100 * j.twistForce)))),) # dampen twisting
 
 def createCapsule(world, space, density, length, radius):
     """Creates a capsule body and corresponding geom.
@@ -428,11 +428,17 @@ def createCapsule(world, space, density, length, radius):
 
     return body, geom
 
+es_Primera_Vez = True
+t_Cam_Lenta = 0
+
 def near_callback(args, geom1, geom2):
     """Callback function for the collide() method.
     This function checks if the given geoms do collide and creates contact
     joints if they do."""
-    global SloMo
+    global SloMo, es_Primera_Vez, t_Cam_Lenta
+
+    if not es_Primera_Vez and time() - t_Cam_Lenta > 2:
+        SloMo = 1
 
     if not areConnected(geom1.getBody(), geom2.getBody()):
         # check if the objects collide
@@ -442,8 +448,10 @@ def near_callback(args, geom1, geom2):
         world, contactgroup = args
 
         for c in contacts:
-            if type(geom1) == type(geom2):# else False
-                SloMo = 4 * 1 + 1 
+            if es_Primera_Vez and type(geom1) == type(geom2):# else False
+                SloMo = 4 * 1 + 1
+                t_Cam_Lenta = time()
+                es_Primera_Vez = False
                           
             c.setBounce(1 / 5)
             c.setMu(500) # 0-5 = very slippery, 50-500 = normal, 5000 = very sticky
