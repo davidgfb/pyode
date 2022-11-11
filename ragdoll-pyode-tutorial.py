@@ -206,7 +206,7 @@ class Ragdoll():
         0, r), (self.rightForeArm, self.rightHand, R_WRIST_POS,\
         fwdAxis, k, s), (self.leftForeArm, self.leftHand,\
         L_WRIST_POS, bkwdAxis, k, s))),)
-
+    
     def addBody(self, p1, p2, radius, name):
         """Adds a capsule body between joint positions p1 and p2 and with given
         radius to the ragdoll."""
@@ -244,10 +244,8 @@ class Ragdoll():
         
         body.setPosition((p1 + p2) / 2)
         body.setRotation(rot)
-
         (*(a.append(b) for a, b in ((self.bodies, body),\
-                                     (self.geoms, geom))),) #?
-        
+                                    (self.geoms, geom))),) #?     
         self.totalMass += body.getMass().mass
 
         return body
@@ -332,10 +330,8 @@ class Ragdoll():
         joint.baseTwistUp2 = getBodyRelVec(body2, baseTwistUp)
 
         # store joint rotation limits and resistive force factors
-        joint.flexLimit, joint.twistLimit, joint.flexForce,\
-                         joint.twistForce =\
-                         flexLimit, twistLimit, flexForce,\
-                         twistForce
+        joint.flexLimit, joint.twistLimit, joint.flexForce, joint.twistForce =\
+                         flexLimit, twistLimit, flexForce, twistForce
 
         return self.get_Junta("ball", joint)
 
@@ -459,7 +455,7 @@ def prepare_GL():
     """Setup basic OpenGL rendering with smooth shading and a single light.""" 
     #glClearColor(*(0.8, 0.8, 0.9, 0)) 
     glClear(16640)
-    tuple(map(glEnable, (GL_DEPTH_TEST, GL_LIGHTING)))   
+    (*(map(glEnable, (GL_DEPTH_TEST, GL_LIGHTING))),)
     glShadeModel(GL_SMOOTH)
     glMatrixMode(GL_PROJECTION)
     glLoadIdentity()
@@ -467,15 +463,19 @@ def prepare_GL():
     glViewport(0, 0, width, height)
     glMatrixMode(GL_MODELVIEW)
     glLoadIdentity()   
-    tuple(map(glEnable, (GL_LIGHT0, GL_COLOR_MATERIAL)))
+    (*(map(glEnable, (GL_LIGHT0, GL_COLOR_MATERIAL))),)
     glColor3f(*(0.8 * ones(3)))
 
     x, y, z = cuerpos['pelvis'].getPosition()
 
-    gluLookAt(*((2, 4, 3) + (x, y, z) + tuple(upAxis)))
+    gluLookAt(*((2, 4, 3) + (x, y, z) + (*(upAxis),)))
+
+pos_Pies = {}
 
 def draw_body(body):
     """Draw an ODE body."""
+    global pos_Pies
+    
     glPushMatrix()
 
     """Returns an OpenGL compatible (column-major, 4x4 homogeneous) transformation
@@ -502,18 +502,31 @@ def draw_body(body):
         glutSolidSphere(body.radius, CAPSULE_SLICES,\
                         CAPSULE_STACKS)
 
-        '''print(body == ragdoll.bodies['leftFoot'] or\
-              body == ragdoll.bodies['rightFoot'])'''
+        '''es_Pie_Izdo, es_Pie_Dcho = body == cuerpos['leftFoot'],\
+                                   body == cuerpos['rightFoot']
+        if es_Pie_Izdo or es_Pie_Dcho:
+            if es_Pie_Izdo:
+                pos_Pies['pie_Izdo'] = 'a'
+    
+            if es_Pie_Dcho:
+                pos_Pies['pie_Dcho'] = 'b'
 
-        '''glBegin(GL_POLYGON)# Draw A Quad
-        glVertex3f(-0.5, 1.0, 0.0)# Top Left
-        glVertex3f(-1.0, 0.0, 0.0)# Left
-        glVertex3f(-0.5, 1.0, 0.0)# Bottom Left
-        glVertex3f(0.5, 1.0, 0.0)# Top Right
-        glVertex3f(1.0, 0.0, 0.0)# Right
-        glVertex3f(0.5, 1.0, 0.0)#Bottom Right
-        glEnd()'''
-        
+        if len(pos_Pies) > 1:
+            pos_Pies = {}'''
+                
+            #glPushMatrix()
+
+        '''if n_Pies > 0:
+                #guarda pos
+                glBegin(GL_POLYGON)
+                glVertex3f(1,0,0)
+                glVertex3f(0,1,0)
+                glVertex3f(0,0,0)
+                glEnd()
+                n_Pies = 0
+
+            else:
+                n_Pies += 1'''
 
     glPopMatrix()
 
