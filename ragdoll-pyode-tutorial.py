@@ -8,7 +8,7 @@ from OpenGL.GL import glClearColor, glClear, glEnable,\
      glViewport, GL_MODELVIEW, glLightfv, GL_LIGHT0,\
      GL_POSITION, GL_DIFFUSE, GL_SPECULAR, GL_COLOR_MATERIAL,\
      glColor3f, glPushMatrix, glMultMatrixf, glTranslatef,\
-     glPopMatrix
+     glPopMatrix, glBegin, GL_POLYGON, glVertex3f, glEnd
 from OpenGL.GLU import gluPerspective, gluLookAt, gluNewQuadric,\
      gluQuadricNormals, GLU_SMOOTH, gluQuadricTexture,\
      gluCylinder
@@ -33,8 +33,7 @@ leftAxis, downAxis, fwdAxis = -rightAxis, -upAxis, -bkwdAxis
 
 '''rotation directions are named by the third (z-axis) row of the 3x3 matrix,
 because ODE capsules are oriented along the z-axis'''
-rightRot = array(tuple(-bkwdAxis) + tuple(upAxis) +\
-                 tuple(rightAxis))
+rightRot = array((*-bkwdAxis,) + (*upAxis,) + (*rightAxis,))
 
 UPPER_ARM_LEN, FORE_ARM_LEN, HAND_LEN, FOOT_LEN, HEEL_LEN = 0.3,\
                                         0.25, 0.13, 0.18, 0.05
@@ -83,7 +82,7 @@ cuerpos, nCuerpo, CAPSULE_SLICES, CAPSULE_STACKS, t = {}, 0, 16,\
                                                       12, 0
 
 def a_Array(a, b):
-    return tuple(map(array, (a, b))) 
+    return (*map(array, (a, b)),)
 
 def norm3(v):
     """Returns the unit length 3-vector parallel to 3-vector v."""
@@ -146,28 +145,28 @@ class Ragdoll():
                     self.rightUpperArm, self.leftUpperArm,\
                     self.rightForeArm, self.leftForeArm,\
                     self.rightHand, self.leftHand =\
-     tuple(self.addBody(a, b, c, d) for a, b, c, d in\
-         ((k * j, k, 0.13, 'chest'),\
-         ((CHEST_H - 1 / 10) * upAxis, (HIP_H + 1 / 10) * upAxis,\
-           1 / 8, 'belly'), ((-PELVIS_W / 2, HIP_H, 0),\
-          (PELVIS_W / 2, HIP_H, 0), 1 / 8, 'pelvis'),\
-          (BROW_H * upAxis, MOUTH_H * upAxis, 0.11, 'head'),\
-          (R_HIP_POS, R_KNEE_POS, 0.11, 'rightUpperLeg'),\
-          (L_HIP_POS, L_KNEE_POS, 0.11, 'leftUpperLeg'),\
-          (R_KNEE_POS, R_ANKLE_POS, 0.09, 'rightLowerLeg'),\
-          (L_KNEE_POS, L_ANKLE_POS, 0.09, 'leftLowerLeg'),\
-          (R_HEEL_POS, R_TOES_POS, 0.09, 'rightFoot'),
-          (L_HEEL_POS, L_TOES_POS, 0.09, 'leftFoot'),\
-          (R_SHOULDER_POS, R_ELBOW_POS, 0.08, 'rightUpperArm'),\
-          (L_SHOULDER_POS, L_ELBOW_POS, 0.08, 'leftUpperArm'),\
-          (R_ELBOW_POS, R_WRIST_POS, 0.075, 'rightForeArm'),\
-          (L_ELBOW_POS, L_WRIST_POS, 0.075, 'leftForeArm'),\
-          (R_WRIST_POS, R_FINGERS_POS, 0.075, 'rightHand'),\
-          (L_WRIST_POS, L_FINGERS_POS, 0.075, 'leftHand')))
+        (*(self.addBody(a, b, c, d) for a, b, c, d in\
+        ((k * j, k, 0.13, 'chest'),\
+        ((CHEST_H - 1 / 10) * upAxis, (HIP_H + 1 / 10) * upAxis,\
+        1 / 8, 'belly'), ((-PELVIS_W / 2, HIP_H, 0),\
+        (PELVIS_W / 2, HIP_H, 0), 1 / 8, 'pelvis'),\
+        (BROW_H * upAxis, MOUTH_H * upAxis, 0.11, 'head'),\
+        (R_HIP_POS, R_KNEE_POS, 0.11, 'rightUpperLeg'),\
+        (L_HIP_POS, L_KNEE_POS, 0.11, 'leftUpperLeg'),\
+        (R_KNEE_POS, R_ANKLE_POS, 0.09, 'rightLowerLeg'),\
+        (L_KNEE_POS, L_ANKLE_POS, 0.09, 'leftLowerLeg'),\
+        (R_HEEL_POS, R_TOES_POS, 0.09, 'rightFoot'),
+        (L_HEEL_POS, L_TOES_POS, 0.09, 'leftFoot'),\
+        (R_SHOULDER_POS, R_ELBOW_POS, 0.08, 'rightUpperArm'),\
+        (L_SHOULDER_POS, L_ELBOW_POS, 0.08, 'leftUpperArm'),\
+        (R_ELBOW_POS, R_WRIST_POS, 0.075, 'rightForeArm'),\
+        (L_ELBOW_POS, L_WRIST_POS, 0.075, 'leftForeArm'),\
+        (R_WRIST_POS, R_FINGERS_POS, 0.075, 'rightHand'),\
+        (L_WRIST_POS, L_FINGERS_POS, 0.075, 'leftHand'))),)
         self.midSpine, self.lowSpine =\
-        tuple(self.addFixedJoint(a, b) for a, b in\
-            ((self.chest, self.belly),\
-             (self.belly, self.pelvis)))                                   
+        (*(self.addFixedJoint(a, b) for a, b in\
+        ((self.chest, self.belly),\
+        (self.belly, self.pelvis))),)                                   
         k, l, m, n, o, p, q, r, s = -pi / 10, -0.15 * pi,\
                                     0.75 * pi, 0.3 * pi,\
                                     pi / 20, pi / 2, pi / 4,\
@@ -176,7 +175,7 @@ class Ragdoll():
                     NECK_H * upAxis, -upAxis, bkwdAxis, q, q, 80,\
                     40)      
         self.rightHip, self.leftHip =\
-       (self.addUniversalJoint(a, b, c, d, e, f, g, h, i) for\
+        (self.addUniversalJoint(a, b, c, d, e, f, g, h, i) for\
         a, b, c, d, e, f, g, h, i in ((self.pelvis,\
         self.rightUpperLeg, R_HIP_POS, bkwdAxis, rightAxis, k,\
         n, l, m), (self.pelvis, self.leftUpperLeg, L_HIP_POS,\
@@ -184,31 +183,29 @@ class Ragdoll():
 
         self.rightKnee, self.leftKnee, self.rightAnkle,\
         self.leftAnkle =\
-        tuple(self.addHingeJoint(a, b, c, d, e, f) for\
+        (*(self.addHingeJoint(a, b, c, d, e, f) for\
         a, b, c, d, e, f in ((self.rightUpperLeg,\
         self.rightLowerLeg, R_KNEE_POS, leftAxis, 0, m),\
-       (self.leftUpperLeg, self.leftLowerLeg, L_KNEE_POS,\
+        (self.leftUpperLeg, self.leftLowerLeg, L_KNEE_POS,\
         leftAxis, 0, m), (self.rightLowerLeg, self.rightFoot,\
         R_ANKLE_POS, rightAxis, k, o), (self.leftLowerLeg,\
-        self.leftFoot, L_ANKLE_POS, rightAxis, k, o)))
+        self.leftFoot, L_ANKLE_POS, rightAxis, k, o))),)
         self.rightShoulder, self.leftShoulder =\
-        tuple(self.addBallJoint(a, b, c, d, e, f, g, h, i) for\
+        (*(self.addBallJoint(a, b, c, d, e, f, g, h, i) for\
         a, b, c, d, e, f, g, h, i in ((self.chest,\
         self.rightUpperArm, R_SHOULDER_POS, norm3((-1, -1, 4)),\
         bkwdAxis, p, q, 150, 100), (self.chest,\
         self.leftUpperArm, L_SHOULDER_POS, norm3((1, -1, 4)),\
-        bkwdAxis, p, q, 150, 100)))                    
+        bkwdAxis, p, q, 150, 100))),)                    
         self.rightElbow, self.leftElbow, self.rightWrist,\
         self.leftWrist =\
-        tuple(self.addHingeJoint(a, b, c, d, e, f) for\
+        (*(self.addHingeJoint(a, b, c, d, e, f) for\
         a, b, c, d, e, f in ((self.rightUpperArm,\
         self.rightForeArm, R_ELBOW_POS, downAxis, 0, r),\
-       (self.leftUpperArm, self.leftForeArm, L_ELBOW_POS, upAxis,\
+        (self.leftUpperArm, self.leftForeArm, L_ELBOW_POS, upAxis,\
         0, r), (self.rightForeArm, self.rightHand, R_WRIST_POS,\
         fwdAxis, k, s), (self.leftForeArm, self.leftHand,\
-        L_WRIST_POS, bkwdAxis, k, s)))
-
-    f = lambda self, a, b : a.append(b)
+        L_WRIST_POS, bkwdAxis, k, s))),)
 
     def addBody(self, p1, p2, radius, name):
         """Adds a capsule body between joint positions p1 and p2 and with given
@@ -248,8 +245,8 @@ class Ragdoll():
         body.setPosition((p1 + p2) / 2)
         body.setRotation(rot)
 
-        tuple(self.f(a, b) for a, b in ((self.bodies, body),\
-                                        (self.geoms, geom))) #?
+        (*(a.append(b) for a, b in ((self.bodies, body),\
+                                     (self.geoms, geom))),) #?
         
         self.totalMass += body.getMass().mass
 
@@ -257,7 +254,7 @@ class Ragdoll():
 
     def get_Junta(self, j_Style, joint):
         joint.style = j_Style
-        self.f(self.joints, joint)
+        self.joints.append(joint)
 
         return joint
 
@@ -362,10 +359,10 @@ class Ragdoll():
 
                 if angle > j.flexLimit:
                     # add torque to push body back towards base axis
-                    (*(map(j_B1.addTorque,\
+                    (*map(j_B1.addTorque,\
                         ((norm3(cross(currAxis, baseAxis)) *\
                          (angle - j.flexLimit) * j.flexForce),\
-                         (-flexAngVel / 100 * j.flexForce)))),) #dampen flex to prevent bounceback
+                         (-flexAngVel / 100 * j.flexForce))),) #dampen flex to prevent bounceback
 
                 '''determine the base twist up vector for the current attached
                 body by applying the current joint flex to the fixed body's
@@ -489,8 +486,8 @@ def draw_body(body):
     for e_R in r:
         e_R += (0,)    
     
-    glMultMatrixf((tuple(array(r).reshape(12).tolist()) +\
-                   tuple(body.getPosition()) + (1,)))
+    glMultMatrixf(((*(array(r).reshape(12).tolist()),) +\
+                   (*(body.getPosition()) + (1,),)))
     
     if body.shape == "capsule": 
         cylHalfHeight = body.length / 2
@@ -504,6 +501,19 @@ def draw_body(body):
         glTranslatef(*(body.length * bkwdAxis)) #no need pp
         glutSolidSphere(body.radius, CAPSULE_SLICES,\
                         CAPSULE_STACKS)
+
+        '''print(body == ragdoll.bodies['leftFoot'] or\
+              body == ragdoll.bodies['rightFoot'])'''
+
+        '''glBegin(GL_POLYGON)# Draw A Quad
+        glVertex3f(-0.5, 1.0, 0.0)# Top Left
+        glVertex3f(-1.0, 0.0, 0.0)# Left
+        glVertex3f(-0.5, 1.0, 0.0)# Bottom Left
+        glVertex3f(0.5, 1.0, 0.0)# Top Right
+        glVertex3f(1.0, 0.0, 0.0)# Right
+        glVertex3f(0.5, 1.0, 0.0)#Bottom Right
+        glEnd()'''
+        
 
     glPopMatrix()
 
@@ -540,7 +550,7 @@ def onDraw():
     global t
     
     prepare_GL()
-    tuple(draw_body(b) for b in bodies + ragdoll.bodies)
+    (*(draw_body(b) for b in bodies + ragdoll.bodies),)
     glutSwapBuffers()
 
     #contador fps
