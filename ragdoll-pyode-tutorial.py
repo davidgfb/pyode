@@ -129,34 +129,7 @@ class Ragdoll():
                     self.offset, k = world, space, density, [],\
                     [], [], 0, offset, (CHEST_W / 2, CHEST_H, 0)
 
-        '''self.chest, self.belly, self.pelvis, self.head,\
-                    self.rightUpperLeg, self.leftUpperLeg,\
-                    self.rightLowerLeg, self.leftLowerLeg,\
-                    self.rightFoot, self.leftFoot,\
-                    self.rightUpperArm, self.leftUpperArm,\
-                    self.rightForeArm, self.leftForeArm,\
-                    self.rightHand, self.leftHand =\
-        (*(self.addBody(*a) for a in\
-        ((k * j, k, 13/100, 'chest'),\
-        ((CHEST_H - 1 / 10) * upAxis, (HIP_H + 1 / 10) * upAxis,\
-        1 / 8, 'belly'), ((-PELVIS_W / 2, HIP_H, 0),\
-        (PELVIS_W / 2, HIP_H, 0), 1 / 8, 'pelvis'),\
-        (BROW_H * upAxis, MOUTH_H * upAxis, 0.11, 'head'),\
-        (R_HIP_POS, R_KNEE_POS, 11/100, 'rightUpperLeg'),\
-        (L_HIP_POS, L_KNEE_POS, 11/100, 'leftUpperLeg'),\
-        (R_KNEE_POS, R_ANKLE_POS, 9/100, 'rightLowerLeg'),\
-        (L_KNEE_POS, L_ANKLE_POS, 9/100, 'leftLowerLeg'),\
-        (R_HEEL_POS, R_TOES_POS, 9/100, 'rightFoot'),
-        (L_HEEL_POS, L_TOES_POS, 9/100, 'leftFoot'),\
-        (R_SHOULDER_POS, R_ELBOW_POS, 2/25, 'rightUpperArm'),\
-        (L_SHOULDER_POS, L_ELBOW_POS, 2/25, 'leftUpperArm'),\
-        (R_ELBOW_POS, R_WRIST_POS, 3/40, 'rightForeArm'),\
-        (L_ELBOW_POS, L_WRIST_POS, 3/40, 'leftForeArm'),\
-        (R_WRIST_POS, R_FINGERS_POS, 3/40, 'rightHand'),\
-        (L_WRIST_POS, L_FINGERS_POS, 3/40, 'leftHand'))),)'''
-
-        Ragdoll = {}
-        miembros = {'Chest' : (k * j, k, 13/100, 'chest'),
+        Ragdoll, miembros = {}, {'Chest' : (k * j, k, 13/100, 'chest'),
                     'Belly' : ((CHEST_H - 1 / 10) * upAxis,\
                                (HIP_H + 1 / 10) * upAxis, 1 / 8,\
                                'belly'),
