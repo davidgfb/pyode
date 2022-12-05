@@ -1,5 +1,5 @@
 # pyode
-![Captura de pantalla (8)](https://user-images.githubusercontent.com/20667923/201416467-0c7a5609-db3f-4f9a-a64f-a75820289226.png)
+![Captura de pantalla (4)](https://user-images.githubusercontent.com/20667923/205651394-044606cc-3d56-4124-b890-a8e846ecb227.png)
 https://www.lfd.uci.edu/~gohlke/pythonlibs/#ode<br>
 https://www.lfd.uci.edu/~gohlke/pythonlibs/#pyopengl (NO accelerate)
 
