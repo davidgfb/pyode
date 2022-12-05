@@ -1,7 +1,9 @@
 from time import time, sleep
 from random import uniform
-
 from math import pi, acos, cos, sin
+from numpy import array, cross, zeros, ones
+from numpy.linalg import norm
+
 from OpenGL.GL import glClearColor, glClear, glEnable,\
      GL_DEPTH_TEST, GL_LIGHTING, GL_NORMALIZE, glShadeModel,\
      GL_SMOOTH, glMatrixMode, GL_PROJECTION, glLoadIdentity,\
@@ -23,27 +25,22 @@ from ode import Body, Mass, GeomCCylinder, FixedJoint,\
      ParamLoStop2, ParamHiStop2, BallJoint, areConnected,\
      collide, ContactJoint, World, Space, GeomPlane, JointGroup
 
-from numpy import array, cross, zeros, ones
-from numpy.linalg import norm
-
+es_Primera_Vez, t_Cam_Lenta = True, 0 
 # axes used to determine constrained joint rotations
 rightAxis, upAxis, bkwdAxis = array((1, 0, 0)), array((0, 1, 0)),\
                               array((0, 0, 1))
 leftAxis, downAxis, fwdAxis = -rightAxis, -upAxis, -bkwdAxis 
-
 '''rotation directions are named by the third (z-axis) row of the 3x3 matrix,
 because ODE capsules are oriented along the z-axis'''
 rightRot = array((*-bkwdAxis,) + (*upAxis,) + (*rightAxis,))
-
-UPPER_ARM_LEN, FORE_ARM_LEN, HAND_LEN, FOOT_LEN, HEEL_LEN = 0.3,\
-                                        0.25, 0.13, 0.18, 0.05
+UPPER_ARM_LEN, FORE_ARM_LEN, HAND_LEN, FOOT_LEN, HEEL_LEN = 3/10,\
+                                        1/4, 13/100, 9/50, 1/20
 '''HAND_LEN wrist to mid-fingers only
 FOOT_LEN ankles to base of ball of foot only'''
-
 BROW_H, MOUTH_H, NECK_H, SHOULDER_H, CHEST_H, HIP_H, KNEE_H,\
-        ANKLE_H, SHOULDER_W, CHEST_W, LEG_W, PELVIS_W = 1.68,\
-        1.53, 1.5, 1.37, 1.35, 0.86, 0.48, 0.08, 0.41, 0.36,\
-        0.28, 0.25
+        ANKLE_H, SHOULDER_W, CHEST_W, LEG_W, PELVIS_W = 42/25,\
+        153/100, 3/2, 137/100, 27/20, 43/50, 12/25, 2/25, 41/100,\
+        9/25, 7/25, 1/4
 '''CHEST_W actually wider, but we want narrower than shoulders (esp. with large radius)
 LEG_W between middles of upper legs
 PELVIS_W actually wider, but we want smaller than hip width'''
@@ -86,9 +83,7 @@ def a_Array(a, b):
 
 def norm3(v):
     """Returns the unit length 3-vector parallel to 3-vector v."""
-    v = array(v)
-    l = norm(v)
-    normalizado = zeros(3)
+    v, l, normalizado = array(v), norm(v), zeros(3) 
     
     if not l == 0:
         normalizado = v / l 
@@ -103,9 +98,7 @@ def project3(v, d):
 
 def acosdot3(a, b):
     """Returns the angle between unit 3-vectors a and b."""
-    a, b = a_Array(a, b)
-
-    x = a @ b
+    (a, b), x = a_Array(a, b), a @ b 
 
     if x < -1:
         angulo = pi
@@ -145,32 +138,46 @@ class Ragdoll():
                     self.rightUpperArm, self.leftUpperArm,\
                     self.rightForeArm, self.leftForeArm,\
                     self.rightHand, self.leftHand =\
-        (*(self.addBody(a, b, c, d) for a, b, c, d in\
-        ((k * j, k, 0.13, 'chest'),\
+        (*(self.addBody(*a) for a in\
+        ((k * j, k, 13/100, 'chest'),\
         ((CHEST_H - 1 / 10) * upAxis, (HIP_H + 1 / 10) * upAxis,\
         1 / 8, 'belly'), ((-PELVIS_W / 2, HIP_H, 0),\
         (PELVIS_W / 2, HIP_H, 0), 1 / 8, 'pelvis'),\
         (BROW_H * upAxis, MOUTH_H * upAxis, 0.11, 'head'),\
-        (R_HIP_POS, R_KNEE_POS, 0.11, 'rightUpperLeg'),\
-        (L_HIP_POS, L_KNEE_POS, 0.11, 'leftUpperLeg'),\
-        (R_KNEE_POS, R_ANKLE_POS, 0.09, 'rightLowerLeg'),\
-        (L_KNEE_POS, L_ANKLE_POS, 0.09, 'leftLowerLeg'),\
-        (R_HEEL_POS, R_TOES_POS, 0.09, 'rightFoot'),
-        (L_HEEL_POS, L_TOES_POS, 0.09, 'leftFoot'),\
-        (R_SHOULDER_POS, R_ELBOW_POS, 0.08, 'rightUpperArm'),\
-        (L_SHOULDER_POS, L_ELBOW_POS, 0.08, 'leftUpperArm'),\
-        (R_ELBOW_POS, R_WRIST_POS, 0.075, 'rightForeArm'),\
-        (L_ELBOW_POS, L_WRIST_POS, 0.075, 'leftForeArm'),\
-        (R_WRIST_POS, R_FINGERS_POS, 0.075, 'rightHand'),\
-        (L_WRIST_POS, L_FINGERS_POS, 0.075, 'leftHand'))),)
+        (R_HIP_POS, R_KNEE_POS, 11/100, 'rightUpperLeg'),\
+        (L_HIP_POS, L_KNEE_POS, 11/100, 'leftUpperLeg'),\
+        (R_KNEE_POS, R_ANKLE_POS, 9/100, 'rightLowerLeg'),\
+        (L_KNEE_POS, L_ANKLE_POS, 9/100, 'leftLowerLeg'),\
+        (R_HEEL_POS, R_TOES_POS, 9/100, 'rightFoot'),
+        (L_HEEL_POS, L_TOES_POS, 9/100, 'leftFoot'),\
+        (R_SHOULDER_POS, R_ELBOW_POS, 2/25, 'rightUpperArm'),\
+        (L_SHOULDER_POS, L_ELBOW_POS, 2/25, 'leftUpperArm'),\
+        (R_ELBOW_POS, R_WRIST_POS, 3/40, 'rightForeArm'),\
+        (L_ELBOW_POS, L_WRIST_POS, 3/40, 'leftForeArm'),\
+        (R_WRIST_POS, R_FINGERS_POS, 3/40, 'rightHand'),\
+        (L_WRIST_POS, L_FINGERS_POS, 3/40, 'leftHand'))),)
+
+        Ragdoll = {}
+        miembros = {'Chest' : (k * j, k, 13/100, 'chest'),
+            'Belly' : ((CHEST_H - 1 / 10) * upAxis,\
+                       (HIP_H + 1 / 10) * upAxis, 1 / 8, 'belly'),
+            'Pelvis' : ((-PELVIS_W / 2, HIP_H, 0),\
+                        (PELVIS_W / 2, HIP_H, 0), 1 / 8, 'pelvis'),
+            'Head' : (BROW_H * upAxis, MOUTH_H * upAxis, 0.11, 'head')}
+
+        for nom_M in miembros:
+            Ragdoll[nom_M] = self.addBody(*miembros[nom_M])
+
+        print(Ragdoll)
+        
         self.midSpine, self.lowSpine =\
         (*(self.addFixedJoint(a, b) for a, b in\
         ((self.chest, self.belly),\
         (self.belly, self.pelvis))),)                                   
-        k, l, m, n, o, p, q, r, s = -pi / 10, -0.15 * pi,\
-                                    0.75 * pi, 0.3 * pi,\
+        k, l, m, n, o, p, q, r, s = -pi / 10, -3/20 * pi,\
+                                    3/4 * pi, 3/10 * pi,\
                                     pi / 20, pi / 2, pi / 4,\
-                                    0.6 * pi, pi / 5
+                                    3/50 * pi, pi / 5
         self.neck = self.addBallJoint(self.chest, self.head,\
                     NECK_H * upAxis, -upAxis, bkwdAxis, q, q, 80,\
                     40)      
@@ -212,17 +219,15 @@ class Ragdoll():
         radius to the ragdoll."""
         global cuerpos, nCuerpo
 
-        p1, p2 = (p1, p2) + self.offset
+        (p1, p2), body = (p1, p2) + self.offset, Body(self.world)
 
         # cylinder length not including endcaps, make capsules overlap by half
         #   radius at joints
-        cyllen, body = norm(p1 - p2) - radius, Body(self.world)
-        cuerpos[name] = body 
+        cyllen, cuerpos[name], m = norm(p1 - p2) - radius, body,\
+                                   Mass()  
         
-        m = Mass()
         m.setCapsule(self.density, 3, radius, cyllen)
         body.setMass(m)
-
         # set parameters for drawing the body
         # create a capsule geom for collision detection
         # define body rotation automatically from body axis
@@ -260,7 +265,6 @@ class Ragdoll():
         joint = FixedJoint(self.world)
 
         joint.attach(body1, body2)
-
         joint.setFixed()
 
         return self.get_Junta("fixed", joint)
@@ -277,11 +281,9 @@ class Ragdoll():
         joint = HingeJoint(self.world)
 
         self.junta(joint, (body1, body2), anchor)
-
         joint.setAxis(axis)
-
-        tuple(joint.setParam(a, b) for a, b in\
-              ((ParamLoStop, loStop), (ParamHiStop, hiStop)))
+        (*(joint.setParam(a, b) for a, b in\
+              ((ParamLoStop, loStop), (ParamHiStop, hiStop))),)
         
         return self.get_Junta("hinge", joint)
 
@@ -293,13 +295,11 @@ class Ragdoll():
         joint = UniversalJoint(self.world)
 
         self.junta(joint, (body1, body2), anchor)
-
         joint.setAxis1(axis1)
         joint.setAxis2(axis2)
-        
-        tuple(joint.setParam(a, b) for a, b in\
+        (*(joint.setParam(a, b) for a, b in\
             ((ParamLoStop, loStop1), (ParamHiStop, hiStop1),\
-             (ParamLoStop2, loStop2), (ParamHiStop2, hiStop2)))
+             (ParamLoStop2, loStop2), (ParamHiStop2, hiStop2))),)
 
         return self.get_Junta("univ", joint)
 
@@ -313,7 +313,6 @@ class Ragdoll():
         joint = BallJoint(self.world)
 
         self.junta(joint, (body1, body2), anchor)
-
         '''store the base orientation of the joint in the local coordinate system
         of the primary body (because baseAxis and baseTwistUp may not be
         orthogonal, the nearest vector to baseTwistUp but orthogonal to
@@ -421,9 +420,6 @@ def createCapsule(world, space, density, length, radius):
 
     return body, geom
 
-es_Primera_Vez = True
-t_Cam_Lenta = 0
-
 def near_callback(args, geom1, geom2):
     """Callback function for the collide() method.
     This function checks if the given geoms do collide and creates contact
@@ -442,9 +438,8 @@ def near_callback(args, geom1, geom2):
 
         for c in contacts:
             if es_Primera_Vez and type(geom1) == type(geom2):# else False
-                SloMo = 4 * 1 + 1
-                t_Cam_Lenta = time()
-                es_Primera_Vez = False
+                SloMo, t_Cam_Lenta, es_Primera_Vez = 5, time(),\
+                                                     False
                           
             c.setBounce(1 / 5)
             c.setMu(500) # 0-5 = very slippery, 50-500 = normal, 5000 = very sticky
@@ -455,7 +450,7 @@ def prepare_GL():
     """Setup basic OpenGL rendering with smooth shading and a single light.""" 
     #glClearColor(*(0.8, 0.8, 0.9, 0)) 
     glClear(16640)
-    (*(map(glEnable, (GL_DEPTH_TEST, GL_LIGHTING))),)
+    (*map(glEnable, (GL_DEPTH_TEST, GL_LIGHTING)),)
     glShadeModel(GL_SMOOTH)
     glMatrixMode(GL_PROJECTION)
     glLoadIdentity()
@@ -463,12 +458,10 @@ def prepare_GL():
     glViewport(0, 0, width, height)
     glMatrixMode(GL_MODELVIEW)
     glLoadIdentity()   
-    (*(map(glEnable, (GL_LIGHT0, GL_COLOR_MATERIAL))),)
+    (*map(glEnable, (GL_LIGHT0, GL_COLOR_MATERIAL)),)
     glColor3f(*(0.8 * ones(3)))
-
-    x, y, z = cuerpos['pelvis'].getPosition()
-
-    gluLookAt(*((2, 4, 3) + (x, y, z) + (*(upAxis),)))
+    gluLookAt(*((2, 4, 3) + cuerpos['pelvis'].getPosition() +\
+             (*(upAxis),)))
 
 pos_Pies = {}
 
@@ -586,13 +579,10 @@ def onIdle():
         for i in range(stepsPerFrame):
             # Detect collisions and create contact joints
             space.collide((world, contactgroup), near_callback)
-
             # Simulation step (with slo motion)
             world.step(dt / stepsPerFrame / SloMo)
-
             # apply internal ragdoll forces
             ragdoll.update()
-
             # Remove all contact joints
             contactgroup.empty()
 
@@ -604,6 +594,7 @@ glutInitDisplayMode(16) #18 o GLUT_DOUBLE = vsync
 
 # create the program window
 x, y, width, height = 0, 0, 1280, 720
+
 glutInitWindowPosition(x, y)
 glutInitWindowSize(width, height)
 glutCreateWindow("")
@@ -617,7 +608,6 @@ world.setCFM(1e-4)
 
 # create an ODE space object
 space = Space()
-
 # create a plane geom to simulate a floor
 '''create a list to store any ODE bodies which are not part of the ragdoll (this
 is needed to avoid Python garbage collecting these bodies)'''
@@ -629,25 +619,21 @@ lasttime = GeomPlane(space, upAxis, 0), [],\
 JointGroup(), 100, 2, 1, False, time()
 # create the ragdoll
 dt, ragdoll, pos = 1 / fps, Ragdoll(world, space, 500,\
-0.9 * upAxis), (uniform(-0.3, 0.3), 1 / 5, uniform(-0.15, 1 / 5))
- 
+9/10 * upAxis), (uniform(-3/10, 3/10), 1 / 5, uniform(-3/20, 1 / 5))
 # create an obstacle
 obstacle, obsgeom = createCapsule(world, space, 1000, 1 / 20,\
-                                  0.15)
-  
+                                  3/20)
 #pos = (0.27396178783269359, 0.20000000000000001, 0.17531818795388002)
+
 obstacle.setPosition(pos)
 obstacle.setRotation(rightRot)
 bodies.append(obstacle)
-
 # set GLUT callbacks
 glutKeyboardFunc(onKey)
 glutDisplayFunc(onDraw)
 glutIdleFunc(onIdle)
-
 print("obstacle created at", str(pos), "\ntotal mass is %.1f kg (%.1f lbs)" %\
       (ragdoll.totalMass, ragdoll.totalMass * 2.2))
-
 # enter the GLUT event loop
 glutMainLoop()
 
