@@ -99,15 +99,13 @@ def project3(v, d):
 def acosdot3(a, b):
     """Returns the angle between unit 3-vectors a and b."""
     (a, b), x = a_Array(a, b), a @ b 
-
+    angulo = acos(x)
+    
     if x < -1:
         angulo = pi
 
     elif x > 1:
-        angulo = 0
-
-    else: # -1 < x < 1
-        angulo = acos(x)
+        angulo = 0        
 
     return angulo
 
@@ -131,7 +129,7 @@ class Ragdoll():
                     self.offset, k = world, space, density, [],\
                     [], [], 0, offset, (CHEST_W / 2, CHEST_H, 0)
 
-        self.chest, self.belly, self.pelvis, self.head,\
+        '''self.chest, self.belly, self.pelvis, self.head,\
                     self.rightUpperLeg, self.leftUpperLeg,\
                     self.rightLowerLeg, self.leftLowerLeg,\
                     self.rightFoot, self.leftFoot,\
@@ -155,9 +153,9 @@ class Ragdoll():
         (R_ELBOW_POS, R_WRIST_POS, 3/40, 'rightForeArm'),\
         (L_ELBOW_POS, L_WRIST_POS, 3/40, 'leftForeArm'),\
         (R_WRIST_POS, R_FINGERS_POS, 3/40, 'rightHand'),\
-        (L_WRIST_POS, L_FINGERS_POS, 3/40, 'leftHand'))),)
+        (L_WRIST_POS, L_FINGERS_POS, 3/40, 'leftHand'))),)'''
 
-        '''Ragdoll = {}
+        Ragdoll = {}
         miembros = {'Chest' : (k * j, k, 13/100, 'chest'),
                     'Belly' : ((CHEST_H - 1 / 10) * upAxis,\
                                (HIP_H + 1 / 10) * upAxis, 1 / 8,\
@@ -192,7 +190,16 @@ class Ragdoll():
                     lado = 'Left'
 
                 Ragdoll[nom_Ms + lado] = self.addBody(*miembros[nom_Ms][es_Izdo])
-        '''
+
+        self.chest, self.belly, self.pelvis, self.head,\
+                    self.rightUpperLeg, self.leftUpperLeg,\
+                    self.rightLowerLeg, self.leftLowerLeg,\
+                    self.rightFoot, self.leftFoot,\
+                    self.rightUpperArm, self.leftUpperArm,\
+                    self.rightForeArm, self.leftForeArm,\
+                    self.rightHand, self.leftHand =\
+                    (*(Ragdoll[nom_M] for nom_M in Ragdoll),)
+
         self.midSpine, self.lowSpine =\
         (*(self.addFixedJoint(*a) for a in ((self.chest,
                                              self.belly),\
