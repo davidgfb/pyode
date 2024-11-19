@@ -3,6 +3,8 @@
 https://www.lfd.uci.edu/~gohlke/pythonlibs/#ode<br>
 https://www.lfd.uci.edu/~gohlke/pythonlibs/#pyopengl (NO accelerate)
 
+cpython 3.10
+
 #TODO:
 sdf capsula
 
